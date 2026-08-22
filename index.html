@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="DC EVENT">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icone-192.png">
 <title>DC EVENT COMMANDE</title>
 <style>
 /* ---------------------------------------------------------------
@@ -368,7 +370,7 @@ th.num{text-align:right}
 
 <!-- =================== CONNEXION =================== -->
 <div id="login">
-  <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9J2cnIHgxPScwJyB5MT0nMCcgeDI9JzEnIHkyPScxJz48c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZjJkNzgnLz48c3RvcCBvZmZzZXQ9JzEnIHN0b3AtY29sb3I9JyMyMmQzZWUnLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48Y2lyY2xlIGN4PSc1MCcgY3k9JzUwJyByPSc0OCcgZmlsbD0nIzBiMGIxNicvPjxjaXJjbGUgY3g9JzUwJyBjeT0nNTAnIHI9JzQ1JyBmaWxsPSdub25lJyBzdHJva2U9J3VybCgjZyknIHN0cm9rZS13aWR0aD0nMycvPjx0ZXh0IHg9JzUwJyB5PSc2MicgZm9udC1mYW1pbHk9J1NlZ29lIFVJLEFyaWFsLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMzInIGZvbnQtd2VpZ2h0PSc3MDAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9J3VybCgjZyknPkRDPC90ZXh0Pjwvc3ZnPg==" alt="Logo de démonstration">
+  <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9J2cnIHgxPScwJyB5MT0nMCcgeDI9JzEnIHkyPScxJz48c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZjJkNzgnLz48c3RvcCBvZmZzZXQ9JzEnIHN0b3AtY29sb3I9JyMyMmQzZWUnLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48Y2lyY2xlIGN4PSc1MCcgY3k9JzUwJyByPSc0OCcgZmlsbD0nIzBiMGIxNicvPjxjaXJjbGUgY3g9JzUwJyBjeT0nNTAnIHI9JzQ1JyBmaWxsPSdub25lJyBzdHJva2U9J3VybCgjZyknIHN0cm9rZS13aWR0aD0nMycvPjx0ZXh0IHg9JzUwJyB5PSc2MicgZm9udC1mYW1pbHk9J1NlZ29lIFVJLEFyaWFsLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMzInIGZvbnQtd2VpZ2h0PSc3MDAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9J3VybCgjZyknPkRDPC90ZXh0Pjwvc3ZnPg==" alt="Logo de dÃ©monstration">
   <div style="text-align:center">
     <h1>DC EVENT <b>COMMANDE</b></h1>
   </div>
@@ -2182,6 +2184,17 @@ function modale(titre, corps, boutons){
 }
 function fermerModale(){ $('#voile').classList.remove('on'); }
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') fermerModale(); });
+
+/* ---------- Installation sur téléphone ----------
+   Le service worker rend l'application installable sur Android et la fait
+   fonctionner sans réseau. Il n'existe qu'en ligne : ouvert en double-clic
+   (file://), l'enregistrement est impossible et l'application marche
+   déjà hors connexion de toute façon. */
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
 
 /* ---------- Demarrage ---------- */
 if(!charger()) semer();
