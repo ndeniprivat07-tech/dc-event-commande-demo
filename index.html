@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="DC EVENT">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icone-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icone-180.png">
 <title>DC EVENT COMMANDE</title>
 <style>
 /* ---------------------------------------------------------------
@@ -33,7 +33,10 @@ body{
   background-attachment:fixed;
 }
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
-button{cursor:pointer;border:none;background:none}
+button{cursor:pointer;border:none;background:none;touch-action:manipulation}
+/* iOS : empeche le grossissement du texte en rotation et le halo bleu au toucher */
+html{-webkit-text-size-adjust:100%}
+body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:contain}
 a{color:var(--cyan)}
 
 /* ---------- Ecran de connexion ---------- */
@@ -358,6 +361,10 @@ th.num{text-align:right}
   .deux-col > div:last-child > .carte[style*="sticky"]{position:static!important}
   .carte{padding:15px}
   .stat .val{font-size:24px}
+  /* Safari iOS zoome sur tout champ dont le texte fait moins de 16 px : la
+     page se décale et il faut repincer à chaque saisie. 16 px l'en empêche. */
+  input,select,textarea{font-size:16px}
+  .champ input,.champ select,.champ textarea{padding:11px 12px}
   /* Les tableaux restants défilent latéralement plutôt que d'écraser
      chaque cellule sur trois lignes. */
   th,td{padding:9px 10px;white-space:nowrap}

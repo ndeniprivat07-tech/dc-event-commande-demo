@@ -3,11 +3,12 @@
    l'installation, puis on sert le cache d'abord. Une fois installée sur le
    téléphone, elle fonctionne sans réseau — ce qui compte au dépôt.
    Changer CACHE à chaque nouvelle version pour forcer la mise à jour. */
-const CACHE = 'dc-event-v1';
+const CACHE = 'dc-event-v2';   // incrémenté à chaque version : force la mise à jour
 const FICHIERS = [
   './',
   './index.html',
   './manifest.webmanifest',
+  './icone-180.png',
   './icone-192.png',
   './icone-512.png',
   './icone-maskable-512.png'
