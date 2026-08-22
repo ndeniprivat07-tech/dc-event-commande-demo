@@ -12,8 +12,9 @@ android {
         targetSdk 34
         // Le numero de version suit le numero de build GitHub, pour que chaque
         // nouvel APK s'installe par-dessus l'ancien sans desinstallation.
-        versionCode (project.findProperty('vcode') ?: '1').toInteger()
-        versionName '1.' + (project.findProperty('vcode') ?: '0')
+        def numero = (project.findProperty('vcode') ?: '1').toString()
+        versionCode = numero.toInteger()
+        versionName = '1.' + numero
     }
 
     buildTypes {

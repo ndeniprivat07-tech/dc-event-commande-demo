@@ -39,7 +39,22 @@ jobs:
           cp index.html android/app/src/main/assets/index.html
 
       - name: Compiler
-        run: gradle -p android assembleDebug -Pvcode=${{ github.run_number }}
+        id: compilation
+        run: |
+          set -o pipefail
+          gradle -p android assembleDebug -Pvcode=${{ github.run_number }} \
+            --stacktrace --no-daemon 2>&1 | tee journal-compilation.txt
+
+      # En cas d'echec, le journal est publie tel quel : c'est le seul moyen
+      # de diagnostiquer sans acces authentifie aux logs GitHub.
+      - name: Publier le journal en cas d'echec
+        if: failure()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: journal-build
+          name: Journal de compilation (echec)
+          body: "Compilation en echec au run ${{ github.run_number }}."
+          files: journal-compilation.txt
 
       - name: Nommer l'APK
         run: cp android/app/build/outputs/apk/debug/app-debug.apk DC-EVENT-COMMANDE.apk
