@@ -1,0 +1,58 @@
+name: APK Android
+
+# Construit l'APK sur les machines de GitHub, puis le publie dans la page
+# « Releases » du depot. Se declenche a chaque mise a jour de l'application
+# ou de l'enveloppe Android, et peut aussi etre lance a la main.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'android/**'
+      - '.github/workflows/apk.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  construire:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Recuperer le depot
+        uses: actions/checkout@v4
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Embarquer l'application dans l'APK
+        run: |
+          mkdir -p android/app/src/main/assets
+          cp index.html android/app/src/main/assets/index.html
+
+      - name: Compiler
+        run: gradle -p android assembleDebug -Pvcode=${{ github.run_number }}
+
+      - name: Nommer l'APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk DC-EVENT-COMMANDE.apk
+
+      - name: Publier dans Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk
+          name: Application Android (APK)
+          body: |
+            **DC-EVENT-COMMANDE.apk** — version de démonstration, données fictives.
+
+            Installation : téléchargez le fichier sur le téléphone, ouvrez-le,
+            et autorisez l'installation depuis cette source si Android le demande.
+            Chaque nouvelle version s'installe par-dessus l'ancienne.
+          files: DC-EVENT-COMMANDE.apk

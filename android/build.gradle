@@ -1,0 +1,4 @@
+// Projet racine : ne fait que declarer la version du plugin Android.
+plugins {
+    id 'com.android.application' version '8.5.2' apply false
+}

@@ -5,6 +5,10 @@ Maquette d'une application de gestion des locations de matériel événementiel
 
 **➡ Essayer l'application : https://ndeniprivat07-tech.github.io/dc-event-commande-demo/**
 
+**➡ APK Android : https://github.com/ndeniprivat07-tech/dc-event-commande-demo/releases/latest**
+(télécharger `DC-EVENT-COMMANDE.apk` sur le téléphone et l'ouvrir — l'APK est
+reconstruit automatiquement à chaque mise à jour de l'application)
+
 Aucune installation : l'application tourne entièrement dans le navigateur,
 hors connexion une fois chargée. Les données restent sur votre appareil
 (`localStorage`) — chaque visiteur a son propre bac à sable.

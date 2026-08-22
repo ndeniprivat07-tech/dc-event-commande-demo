@@ -1,0 +1,33 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'ci.dcevent.commande'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'ci.dcevent.commande'
+        minSdk 24                 // Android 7.0 et plus — couvre les telephones courants a Abidjan
+        targetSdk 34
+        // Le numero de version suit le numero de build GitHub, pour que chaque
+        // nouvel APK s'installe par-dessus l'ancien sans desinstallation.
+        versionCode (project.findProperty('vcode') ?: '1').toInteger()
+        versionName '1.' + (project.findProperty('vcode') ?: '0')
+    }
+
+    buildTypes {
+        release { minifyEnabled false }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    // WebViewAssetLoader : sert le fichier embarque sous une origine https,
+    // ce qui garantit le bon fonctionnement de localStorage.
+    implementation 'androidx.webkit:webkit:1.11.0'
+}
