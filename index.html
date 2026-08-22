@@ -88,6 +88,31 @@ main{padding:26px 30px 60px;max-width:1500px}
 .tbl-scroll{overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}
 
 /* Fiche de travail du préparateur : lisible au pouce, sans défilement latéral */
+/* Sélecteur d'articles : filtres en pastilles + liste cliquable */
+.puces{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+.puce{padding:6px 13px;border-radius:20px;border:1px solid var(--bord);
+  background:var(--carte);color:var(--txt2);font-size:12.5px;transition:.14s;white-space:nowrap}
+.puce:hover{border-color:var(--bord-clair);color:var(--txt)}
+.puce.on{background:linear-gradient(135deg,var(--rose),#c026d3);border-color:transparent;
+  color:#fff;font-weight:600}
+.puce.raz{color:var(--txt3)}
+.liste-art{max-height:290px;overflow-y:auto;border:1px solid var(--bord);
+  border-radius:10px;background:#0a0a16;-webkit-overflow-scrolling:touch}
+.art{display:flex;align-items:center;gap:11px;width:100%;padding:11px 14px;
+  border-bottom:1px solid #ffffff0a;text-align:left;transition:.12s}
+.art:last-child{border-bottom:none}
+.art:hover:not(:disabled){background:#ff2d7814}
+.art:disabled{opacity:.4;cursor:not-allowed}
+.art-txt{flex:1;min-width:0}
+.art-nom{display:block;font-weight:600;font-size:13.5px;line-height:1.35}
+.art-sous{display:block;font-size:11.5px;color:var(--txt3);margin-top:2px}
+.art-deja{background:#22d3ee1f;color:var(--cyan);font-size:11.5px;font-weight:700;
+  padding:2px 9px;border-radius:20px;flex:0 0 auto}
+.art-plus{width:28px;height:28px;border-radius:50%;background:#ffffff12;flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;
+  color:var(--rose-clair)}
+.art:hover:not(:disabled) .art-plus{background:var(--rose);color:#fff}
+
 /* Fil d'Ariane des étapes de saisie */
 .ruban{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
 .ruban-e{display:flex;align-items:center;gap:9px;padding:8px 15px;border-radius:26px;
@@ -342,7 +367,11 @@ th.num{text-align:right}
   .modale .corps{padding:17px}
   .modale footer{padding:13px 16px;flex-wrap:wrap}
   .modale footer .btn{flex:1 0 auto}
-  #toast{bottom:calc(88px + env(safe-area-inset-bottom))}
+  /* Sur téléphone le message s'affiche en HAUT : en bas il recouvrait les
+     totaux de la fiche commande, qui sont justement ce qu'on vient de modifier. */
+  #toast{top:calc(62px + env(safe-area-inset-top));bottom:auto;
+    transform:translate(-50%,-150px);max-width:calc(100vw - 26px);font-size:13.5px}
+  #toast.on{transform:translate(-50%,0)}
 
   /* Facture sur téléphone : tout se met en colonne, seul le tableau défile */
   #voile-facture{padding:12px}
@@ -470,7 +499,7 @@ function uid(p){ return p + '-' + Math.random().toString(36).slice(2,8).toUpperC
 function toast(msg, type){
   const t = $('#toast');
   t.textContent = msg; t.className = 'on ' + (type||'');
-  clearTimeout(t._h); t._h = setTimeout(()=>t.className='', 3400);
+  clearTimeout(t._h); t._h = setTimeout(()=>t.className='', 2600);
 }
 
 /* ---------- Persistance ---------- */
@@ -555,14 +584,15 @@ function semer(){
       id: uid('C'),
       num: 'CMD-2026-' + String(S.compteur.cmd).padStart(3,'0'),
       creeeLe: new Date().toISOString(), creeePar:'Konan (Manager)',
-      remise:0, escompte:0, caution:0, acompte:0, tva:TVA_DEFAUT,
-      facture:null, retour:null, notes:''
+      remise:0, escompte:0, transport:0, transportNote:'', caution:0, acompte:0,
+      tva:TVA_DEFAUT, facture:null, retour:null, notes:''
     }, o);
     S.commandes.push(c); return c;
   }
 
   cmd({ client:'Mariage Koffi & Aya', tel:'07 08 11 22 33', lieu:'Espace Latrille, Cocody',
         debut:jour(4), fin:jour(6), statut:'RESERVEE', caution:100000, acompte:500000,
+        transport:75000, transportNote:'Livraison et reprise — Cocody',
         lignes:[L('MOB-01',150), L('MOB-04',150), L('MOB-02',15), L('DEC-01',1), L('DEC-02',1), L('ECL-01',8)] });
 
   cmd({ client:'Séminaire Groupe Alpha', tel:'01 44 55 66 77', lieu:'Hôtel Ivoire, Plateau',
@@ -586,6 +616,7 @@ function semer(){
 
   const c5 = cmd({ client:'Baptême Famille Yao', tel:'07 12 34 56 78', lieu:'Yopougon Niangon',
         debut:jour(-12), fin:jour(-11), statut:'FACTUREE', remise:5, escompte:2, caution:50000,
+        transport:40000, transportNote:'Livraison et reprise — Yopougon',
         lignes:[L('MOB-01',80), L('MOB-02',8), L('SON-01',2), L('STR-02',2)] });
   S.compteur.fac++;
   c5.facture = { num:'FAC-2026-'+String(S.compteur.fac).padStart(3,'0'), le:jour(-10) };
@@ -652,8 +683,14 @@ function totalCommande(c){
   const netCom   = brut - remise;
   const escompte = netCom * tauxEscompte / 100;
   const netFin   = netCom - escompte;
-  const tva      = netFin * tauxTva / 100;
-  const ttc      = netFin + tva;
+
+  // Le transport s'ajoute APRÈS les réductions : une remise se négocie sur la
+  // location, pas sur le carburant et le camion.
+  const transport = c.transport || 0;
+  const totalHT   = netFin + transport;
+
+  const tva      = totalHT * tauxTva / 100;
+  const ttc      = totalHT + tva;
   const caution  = c.caution || 0;
 
   // Retenues pour casse et matériel non restitué, imputées sur la caution.
@@ -663,7 +700,7 @@ function totalCommande(c){
   const excedent      = Math.max(0, retenue - caution);
 
   return { jours:j, brut, tauxRemise, remise, netCom, tauxEscompte, escompte,
-           netFin, tauxTva, tva, ttc, caution,
+           netFin, transport, totalHT, tauxTva, tva, ttc, caution,
            retenue, cautionRendue, excedent,
            aEncaisser: ttc + caution,     // avant retour : location + consigne
            duFinal: ttc + retenue,        // après retour : location + dégâts
@@ -1150,8 +1187,9 @@ function vueCommandes(){
 /* ---------- Saisie d'une commande ---------- */
 function nouvelleCommande(){
   brouillon = { etape:1, client:'', tel:'', lieu:'', debut:jour(3), fin:jour(4), lignes:[],
-                remise:0, escompte:0, caution:0, acompte:0, encaisserAcompte:true,
-                tva:S.societe.tva };
+                remise:0, escompte:0, transport:0, transportNote:'', caution:0,
+                acompte:0, encaisserAcompte:true, tva:S.societe.tva };
+  rechArt = { q:'', cat:'' };
   vueCourante = 'commandes'; rendre();
 }
 function etape(n){
@@ -1251,10 +1289,66 @@ function vueSaisie(){
   return brouillon.etape === 2 ? vueSaisie2() : vueSaisie1();
 }
 
+/* =========================================================================
+   SÉLECTEUR D'ARTICLES — recherche libre + filtre par catégorie
+   Une liste déroulante de 22 lignes est intenable au dépôt, sur téléphone.
+   ========================================================================= */
+let rechArt = { q:'', cat:'' };
+
+function majRecherche(v){
+  rechArt.q = v; rendre();
+  const e = $('#rech-art');            // le re-rendu vide le focus : on le rétablit
+  if(e){ e.focus(); e.setSelectionRange(e.value.length, e.value.length); }
+}
+function filtreCat(c){ rechArt.cat = (rechArt.cat === c ? '' : c); rendre(); }
+function videRecherche(){ rechArt.q = ''; rechArt.cat = ''; rendre(); }
+
+function selecteurArticles(b){
+  const cats = [...new Set(S.articles.map(a=>a.cat))];
+  const q = rechArt.q.trim().toLowerCase();
+
+  const trouves = S.articles.filter(a=>{
+    if(rechArt.cat && a.cat !== rechArt.cat) return false;
+    if(!q) return true;
+    return (a.nom + ' ' + a.ref + ' ' + a.cat).toLowerCase().includes(q);
+  });
+
+  return `
+    <div class="champ" style="margin-bottom:10px">
+      <label>Chercher un article</label>
+      <input id="rech-art" value="${esc(rechArt.q)}" autocomplete="off"
+        placeholder="Nom, référence ou catégorie…" oninput="majRecherche(this.value)">
+    </div>
+    <div class="puces">
+      ${cats.map(c=>`<button class="puce ${rechArt.cat===c?'on':''}"
+        onclick="filtreCat('${esc(c)}')">${esc(c)}</button>`).join('')}
+      ${(rechArt.q||rechArt.cat)
+        ? `<button class="puce raz" onclick="videRecherche()">✕ Tout afficher</button>` : ''}
+    </div>
+    <div class="liste-art">
+      ${trouves.map(a=>{
+        const d = dispo(a.id, b.debut, b.fin);
+        const l = b.lignes.find(x=>x.articleId===a.id);
+        const epuise = d < 1 || (l && l.qte >= d);
+        return `<button class="art ${epuise?'ko':''}" ${epuise?'disabled':''}
+          onclick="ajouterLigne('${a.id}')">
+          <span class="art-txt">
+            <span class="art-nom">${esc(a.nom)}</span>
+            <span class="art-sous">${esc(a.ref)} · ${fcfa(a.prix)}/jour ·
+              <span class="${d<1?'dispo-non':(d<a.qte*0.2?'dispo-bas':'dispo-ok')}">${d} dispo.</span></span>
+          </span>
+          ${l ? `<span class="art-deja">${l.qte}</span>` : ''}
+          <span class="art-plus">${epuise?'—':'+'}</span>
+        </button>`;
+      }).join('') || `<div class="vide" style="padding:22px">Aucun article ne correspond</div>`}
+    </div>
+    <div class="puce-cat" style="margin-top:9px">${trouves.length} article(s) affiché(s)
+      sur ${S.articles.length} — disponibilité calculée du ${frCourt(b.debut)} au ${frCourt(b.fin)}</div>`;
+}
+
 function vueSaisie1(){
   const b = brouillon;
   const t = totalCommande(b);
-  const cats = [...new Set(S.articles.map(a=>a.cat))];
   return `
   <div class="entete">
     <div><h2>Nouvelle commande</h2>
@@ -1279,27 +1373,21 @@ function vueSaisie1(){
           <input value="${esc(b.lieu)}" placeholder="Quartier, salle…"
             onchange="majBrouillon('lieu',this.value)"></div>
         <div class="paire">
-          <div class="champ"><label>Début</label>
-            <input type="date" value="${b.debut}" onchange="majBrouillon('debut',this.value)"></div>
-          <div class="champ"><label>Fin</label>
-            <input type="date" value="${b.fin}" min="${b.debut}" onchange="majBrouillon('fin',this.value)"></div>
+          <div class="champ"><label>Date de l'événement</label>
+            <input type="date" value="${b.debut}" onchange="majBrouillon('debut',this.value)">
+            <div class="puce-cat" style="margin-top:5px">Jour où le matériel doit être sur place</div></div>
+          <div class="champ"><label>Date de récupération</label>
+            <input type="date" value="${b.fin}" min="${b.debut}" onchange="majBrouillon('fin',this.value)">
+            <div class="puce-cat" style="margin-top:5px">Jour où il revient au dépôt</div></div>
         </div>
-        <div style="color:var(--txt2);font-size:13px">Durée facturée : <b>${t.jours} jour(s)</b></div>
+        <div style="color:var(--txt2);font-size:13px">Durée facturée : <b>${t.jours} jour(s)</b>
+          — le matériel est immobilisé de l'événement à la récupération</div>
       </div>
 
       <div class="carte">
         <h3 style="font-size:15px;margin-bottom:14px">Matériel</h3>
-        <div class="champ">
-          <label>Ajouter un article</label>
-          <select onchange="ajouterLigne(this.value);this.value=''">
-            <option value="">— choisir —</option>
-            ${cats.map(cat=>`<optgroup label="${esc(cat)}">
-              ${S.articles.filter(a=>a.cat===cat).map(a=>{
-                const d = dispo(a.id, b.debut, b.fin);
-                return `<option value="${a.id}" ${d<1?'disabled':''}>${esc(a.nom)} — ${fcfa(a.prix)}/j (${d} dispo)</option>`;
-              }).join('')}</optgroup>`).join('')}
-          </select>
-        </div>
+        ${selecteurArticles(b)}
+        <div class="ligne-sep"></div>
         <div class="tbl-scroll">
         <table><thead><tr><th>Article</th><th style="width:110px">Qté</th>
           <th class="num">P.U./jour</th><th class="num">Total</th><th></th></tr></thead><tbody>
@@ -1411,6 +1499,23 @@ function vueSaisie2(){
             et déduit du reste dû. Décochez si le client paiera plus tard.</span></label>
       </div>
 
+      <div class="carte" style="margin-bottom:16px">
+        <h3 style="font-size:15px;margin-bottom:14px">Transport et livraison</h3>
+        <div class="champ"><label>Montant HT (F CFA)</label>
+          <input type="number" min="0" step="5000" value="${b.transport}"
+            onchange="majFinance('transport',this.value)">
+          <div style="display:flex;gap:7px;margin-top:9px;flex-wrap:wrap">
+            ${[25000,50000,75000,100000].map(m=>`<button class="btn mini"
+              onclick="majFinance('transport',${m})">${fcfa(m)}</button>`).join('')}
+            <button class="btn mini" onclick="majFinance('transport',0)">Aucun</button>
+          </div></div>
+        <div class="champ" style="margin-bottom:0"><label>Libellé sur la facture</label>
+          <input value="${esc(b.transportNote||'')}" placeholder="Livraison et reprise — Cocody"
+            onchange="brouillon.transportNote=this.value;rendre()">
+          <div class="puce-cat" style="margin-top:5px">Le transport s'ajoute après les réductions :
+            une remise se négocie sur la location, pas sur le camion</div></div>
+      </div>
+
       <div class="carte">
         <h3 style="font-size:15px;margin-bottom:14px">Caution et taxe</h3>
         <div class="paire">
@@ -1455,6 +1560,8 @@ function cascade(t, dejaRegle, arbitre){
     ${t.remise ? l('Net commercial HT', fcfa(t.netCom), 'color:var(--txt2)') : ''}
     ${t.escompte ? l(`Escompte ${t.tauxEscompte} %`, '− '+fcfa(t.escompte), 'color:var(--orange)') : ''}
     ${t.escompte ? l('Net financier HT', fcfa(t.netFin), 'color:var(--txt2)') : ''}
+    ${t.transport ? l('Transport et livraison', fcfa(t.transport), 'color:var(--txt2)') : ''}
+    ${t.transport ? l('Total HT', fcfa(t.totalHT), 'color:var(--txt2)') : ''}
     ${l(`TVA ${t.tauxTva} %`, fcfa(t.tva), 'color:var(--txt2)')}
     ${l('Total TTC', fcfa(t.ttc), 'font-weight:700')}
     ${t.retenue ? l('Retenue casse et manquants', fcfa(t.retenue), 'color:var(--rouge)') : ''}
@@ -1481,7 +1588,7 @@ function ouvrirCommande(id){
     <div class="paire" style="margin-bottom:6px">
       <div><div class="puce-cat">Client</div><b>${esc(c.client)}</b><br>
         <span style="color:var(--txt2)">${esc(c.tel||'—')}</span></div>
-      <div><div class="puce-cat">Période</div><b>${frDate(c.debut)} → ${frDate(c.fin)}</b><br>
+      <div><div class="puce-cat">Événement → Récupération</div><b>${frDate(c.debut)} → ${frDate(c.fin)}</b><br>
         <span style="color:var(--txt2)">${t.jours} jour(s) — ${esc(c.lieu||'lieu non précisé')}</span></div>
     </div>
     <div class="ligne-sep"></div>
@@ -1649,7 +1756,8 @@ function vuePreparation(){
           </div>
           <div class="job-client">${esc(c.client)}</div>
           <div class="job-info">📍 ${esc(c.lieu||'lieu non précisé')}</div>
-          <div class="job-info">📅 ${frDate(c.debut)} → ${frDate(c.fin)}</div>
+          <div class="job-info">🎉 Événement le <b>${frDate(c.debut)}</b></div>
+          <div class="job-info">↩️ Récupération le <b>${frDate(c.fin)}</b></div>
           <div class="job-actions">
             <button class="btn mini" onclick="ouvrirCommande('${c.id}')">Détail</button>
             <button class="btn mini ${couleur}" onclick="${action}('${c.id}')">${libelle}</button>
@@ -1951,7 +2059,8 @@ function voirFacture(id){
         <div class="fac-p">${esc(c.tel||'')}</div></div>
       <div><div class="fac-lab">Prestation</div>
         <div class="fac-fort">Location de matériel événementiel</div>
-        <div class="fac-p">Du ${frDate(c.debut)} au ${frDate(c.fin)} — ${t.jours} jour(s)</div>
+        <div class="fac-p">Événement le ${frDate(c.debut)} — récupération le ${frDate(c.fin)}
+          (${t.jours} jour(s) facturés)</div>
         <div class="fac-p">${esc(c.lieu||'')}</div>
         <div class="fac-p">Commande ${esc(c.num)}</div></div>
     </div>
@@ -2001,6 +2110,8 @@ function voirFacture(id){
         ${t.remise ? ligneTotal('Net commercial HT', fcfa(t.netCom)) : ''}
         ${t.escompte ? ligneTotal(`Escompte ${t.tauxEscompte} %`, '− '+fcfa(t.escompte)) : ''}
         ${t.escompte ? ligneTotal('Net financier HT', fcfa(t.netFin)) : ''}
+        ${t.transport ? ligneTotal(esc(c.transportNote || 'Transport et livraison'), fcfa(t.transport)) : ''}
+        ${t.transport ? ligneTotal('Total HT', fcfa(t.totalHT)) : ''}
         ${ligneTotal(`TVA ${t.tauxTva} %`, fcfa(t.tva))}
         ${ligneTotal('Total TTC', fcfa(t.ttc), 'ft-sous')}
         ${t.retenue ? ligneTotal('Retenue casse et manquants', fcfa(t.retenue)) : ''}
@@ -2119,8 +2230,10 @@ function vueDemo(){
     <div class="carte">
       <ol class="scenario">
         <li>Connectez-vous en <b>MANAGER</b>. Créez une commande : un mariage samedi prochain,
-            avec 150 chaises Napoléon et 2 enceintes. Le stock disponible se recalcule à chaque
-            changement de date — <i>le stock est un calendrier, pas un compteur</i>.</li>
+            avec 150 chaises Napoléon et 2 enceintes. Tapez « chaise » dans la recherche
+            ou touchez la pastille « Mobilier » : la liste se réduit aussitôt. Le stock
+            disponible se recalcule à chaque changement de date —
+            <i>le stock est un calendrier, pas un compteur</i>.</li>
         <li>Cliquez <b>Suivant</b>. L'étape « Facturation » fixe la remise, l'escompte,
             l'acompte et la caution, et la facture se recalcule en direct à droite.
             Demandez <b>25 % de remise</b> : l'appli enregistre la commande <b>au tarif plein</b>,
@@ -2138,7 +2251,7 @@ function vueDemo(){
             pré-chiffré à la valeur de remplacement du catalogue. Corrigez un montant et
             voyez la caution restituée se recalculer en direct.</li>
         <li>Ouvrez <b>Voir la facture</b> : le document complet, avec la cascade remise →
-            escompte → TVA → caution → retenues → acompte, imprimable ou exportable en PDF.
+            escompte → transport → TVA → caution → retenues → acompte, imprimable ou exportable en PDF.
             Restituez le solde de caution, puis terminez sur « Traçabilité »
             (visible en ADMIN) : chaque geste est daté, motivé et signé.</li>
       </ol>
