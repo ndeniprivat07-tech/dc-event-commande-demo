@@ -91,6 +91,35 @@ main{padding:26px 30px 60px;max-width:1500px}
 .tbl-scroll{overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}
 
 /* Fiche de travail du préparateur : lisible au pouce, sans défilement latéral */
+/* Titres numérotés des blocs de saisie : le parcours doit se lire d'un coup */
+.etiq{display:flex;align-items:center;gap:10px;font-size:15px;margin-bottom:14px}
+.etiq-n{width:23px;height:23px;border-radius:50%;flex:0 0 auto;
+  background:linear-gradient(135deg,var(--rose),#c026d3);color:#fff;
+  font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.etiq-c{background:#22d3ee1f;color:var(--cyan);font-size:11.5px;font-weight:700;
+  padding:2px 9px;border-radius:20px}
+
+/* Matériel retenu : une fiche par ligne, avec incrément tactile */
+.sel{background:#0a0a16;border:1px solid var(--bord);border-radius:10px;
+  padding:12px 14px;margin-bottom:9px}
+.sel:last-child{margin-bottom:0}
+.sel-tete{display:flex;align-items:flex-start;gap:10px}
+.sel-nom{flex:1;min-width:0;font-weight:600;font-size:14px;line-height:1.35}
+.sel-ref{display:block;font-size:11px;color:var(--txt3);font-weight:400;
+  letter-spacing:.3px;margin-top:3px;text-transform:uppercase}
+.sel-x{flex:0 0 auto}
+.sel-bas{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:11px}
+.pas{display:flex;align-items:center;gap:2px;background:#ffffff0d;
+  border:1px solid var(--bord);border-radius:9px;overflow:hidden}
+.pas-b{width:38px;height:36px;font-size:19px;font-weight:700;color:var(--rose-clair);
+  display:flex;align-items:center;justify-content:center;transition:.12s}
+.pas-b:hover:not(:disabled){background:var(--rose);color:#fff}
+.pas-b:disabled{opacity:.3;cursor:not-allowed}
+.pas-v{min-width:46px;text-align:center;font-weight:700;font-size:15px;
+  font-variant-numeric:tabular-nums}
+.sel-tot{text-align:right;font-weight:700;font-size:15px;white-space:nowrap}
+.sel-det{display:block;font-size:11px;color:var(--txt3);font-weight:400;margin-top:2px}
+
 /* Sélecteur d'articles : filtres en pastilles + liste cliquable */
 .puces{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
 .puce{padding:6px 13px;border-radius:20px;border:1px solid var(--bord);
@@ -327,33 +356,24 @@ th.num{text-align:right}
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:44vw}
   #barre .compte{margin-left:auto;flex:0 0 auto}
 
-  /* --- Onglets du bas --- */
-  aside{
-    position:fixed; left:0; right:0; bottom:0; top:auto; z-index:60;
-    height:auto; display:block; padding:0;
-    border-right:none; border-top:1px solid var(--bord);
-    background:#0b0b16f2; backdrop-filter:blur(10px);
-  }
-  .marque,.qui{display:none}
-  nav{display:flex; overflow-x:auto; scrollbar-width:none;
-      padding-bottom:env(safe-area-inset-bottom)}
-  nav::-webkit-scrollbar{display:none}
-  nav button{
-    flex:1 0 auto; min-width:76px; max-width:120px;
-    flex-direction:column; gap:3px; padding:9px 6px 8px;
-    border-radius:0; font-size:10px; letter-spacing:.2px;
-    text-align:center; line-height:1.25;
-  }
-  nav button span:first-child{font-size:19px;line-height:1}
-  nav button.actif{background:linear-gradient(180deg,#ff2d7826,transparent);
-    box-shadow:inset 0 2px 0 var(--rose)}
-  nav button .pastille{position:absolute;margin:0;transform:translate(16px,-4px);
-    padding:1px 6px;font-size:9px}
-  nav button{position:relative}
+  /* --- La barre latérale disparaît : la navigation passe dans le menu --- */
+  aside{display:none}
 
-  /* --- Contenu --- */
+  .barre-menu{
+    margin-left:auto; flex:0 0 auto; position:relative;
+    padding:9px 15px; border-radius:9px; font-size:13.5px; font-weight:600;
+    background:#ffffff12; border:1px solid var(--bord); color:var(--txt);
+  }
+  .barre-menu:active{background:#ffffff20}
+  #barre-pastille:not(:empty){
+    position:absolute; top:-6px; right:-6px; min-width:19px; padding:1px 6px;
+    background:var(--rose); color:#fff; font-size:10px; font-weight:700;
+    border-radius:20px; line-height:1.6;
+  }
+
+  /* --- Contenu : plus rien en bas, la page respire --- */
   main{padding:calc(68px + env(safe-area-inset-top)) 13px
-              calc(84px + env(safe-area-inset-bottom))}
+              calc(34px + env(safe-area-inset-bottom))}
   .entete{margin-bottom:16px} .entete h2{font-size:20px}
   .entete .droite{margin-left:0;width:100%}
   .entete .droite .btn{flex:1}
@@ -376,6 +396,35 @@ th.num{text-align:right}
   .modale footer .btn{flex:1 0 auto}
   /* Sur téléphone le message s'affiche en HAUT : en bas il recouvrait les
      totaux de la fiche commande, qui sont justement ce qu'on vient de modifier. */
+  /* --- Menu déroulant de navigation --- */
+  #voile-nav{
+    position:fixed; inset:0; z-index:80; display:none;
+    background:#000000b8; backdrop-filter:blur(2px);
+  }
+  #voile-nav.on{display:block}
+  #menu-nav{
+    position:absolute; left:0; right:0;
+    top:calc(56px + env(safe-area-inset-top));
+    max-height:calc(100vh - 56px - env(safe-area-inset-top)); overflow-y:auto;
+    background:var(--fond2); border-bottom:1px solid var(--bord-clair);
+    box-shadow:0 18px 46px #000b; padding:8px 0 calc(10px + env(safe-area-inset-bottom));
+  }
+  .nav-e{
+    display:flex; align-items:center; gap:13px; width:100%;
+    padding:13px 18px; color:var(--txt2); font-size:14.5px; text-align:left;
+  }
+  .nav-e .ic{font-size:19px; width:24px; text-align:center; flex:0 0 auto}
+  .nav-e:active{background:#ffffff0d}
+  .nav-e.actif{color:#fff; font-weight:600;
+    background:linear-gradient(90deg,#ff2d7826,transparent);
+    box-shadow:inset 3px 0 0 var(--rose)}
+  .nav-e .pastille{margin-left:auto; background:var(--rose); color:#fff;
+    font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:20px}
+  .nav-sep{height:1px; background:var(--bord); margin:8px 18px}
+  .nav-qui{padding:4px 18px 10px}
+  .nav-qui .r{font-size:10.5px; color:var(--txt3); letter-spacing:1.5px}
+  .nav-qui .n{font-weight:700; font-size:15px; margin-top:2px}
+
   #toast{top:calc(62px + env(safe-area-inset-top));bottom:auto;
     transform:translate(-50%,-150px);max-width:calc(100vw - 26px);font-size:13.5px}
   #toast.on{transform:translate(-50%,0)}
@@ -438,7 +487,8 @@ th.num{text-align:right}
       <div class="t1">DC EVENT</div>
       <div class="t2" id="barre-vue">Tableau de bord</div>
     </div>
-    <button class="btn mini compte" id="barre-compte" onclick="menuCompte()">Compte</button>
+    <button class="barre-menu" id="barre-menu" onclick="ouvrirNav()">
+      <span id="barre-pastille"></span>Menu ▾</button>
   </header>
   <aside>
     <div class="marque">
@@ -454,6 +504,11 @@ th.num{text-align:right}
     </div>
   </aside>
   <main id="vue"></main>
+</div>
+
+<!-- Menu de navigation (téléphone) : déroulé depuis la barre du haut -->
+<div id="voile-nav" onclick="if(event.target===this)fermerNav()">
+  <div id="menu-nav"></div>
 </div>
 
 <div id="voile" onclick="if(event.target===this)fermerModale()"><div class="modale" id="modale"></div></div>
@@ -814,7 +869,7 @@ function deconnexion(){
   $('#app').classList.remove('on');
   $('#login').style.display = 'flex';
 }
-function aller(cle){ vueCourante = cle; brouillon = null; rendre(); }
+function aller(cle){ fermerNav(); vueCourante = cle; brouillon = null; rendre(); }
 
 function rendreMenu(){
   const enAttente = S.validations.filter(v=>v.statut==='EN_ATTENTE').length;
@@ -836,21 +891,45 @@ function rendreBarre(){
   if(logo.getAttribute('src') !== src) logo.setAttribute('src', src);
   const m = MENU.find(x=>x.cle===vueCourante);
   $('#barre-vue').textContent = m ? m.txt : '';
-  $('#barre-compte').textContent = U ? U.nom : 'Compte';
-}
-function menuCompte(){
-  modale('Compte', `
-    <div class="puce-cat">Connecté en tant que</div>
-    <div style="font-size:18px;font-weight:700;margin:3px 0 2px">${esc(U.nom)}</div>
-    <div style="color:var(--txt2)">Profil ${esc(U.role)}</div>
-    <div class="ligne-sep"></div>
-    <button class="btn" style="width:100%;margin-bottom:9px"
-      onclick="fermerModale();deconnexion()">Changer d'utilisateur</button>
-    <button class="btn r" style="width:100%"
-      onclick="fermerModale();reinitialiser()">Réinitialiser la démo</button>
-  `, `<button class="btn" onclick="fermerModale()">Fermer</button>`);
+  // Une pastille sur le bouton Menu : sans onglets visibles, c'est le seul
+  // moyen de savoir qu'une validation ou une préparation attend.
+  const n = alertes();
+  $('#barre-pastille').textContent = n ? n : '';
 }
 
+/* Nombre total d'éléments en attente, tous écrans confondus. */
+function alertes(){
+  let n = 0;
+  if(U && U.role !== 'PREPARATEUR') n += S.validations.filter(v=>v.statut==='EN_ATTENTE').length;
+  if(U && U.role !== 'MANAGER')     n += S.commandes.filter(c=>c.statut==='RESERVEE').length;
+  return n;
+}
+
+/* ---------- Menu de navigation (téléphone) ---------- */
+function ouvrirNav(){
+  const enAttente = S.validations.filter(v=>v.statut==='EN_ATTENTE').length;
+  const aPreparer = S.commandes.filter(c=>c.statut==='RESERVEE').length;
+  $('#menu-nav').innerHTML = `
+    <div class="nav-qui">
+      <div class="r">${esc(U.role)}</div>
+      <div class="n">${esc(U.nom)}</div>
+    </div>
+    <div class="nav-sep"></div>
+    ${MENU.filter(m=>m.roles.includes(U.role)).map(m=>{
+      let p = '';
+      if(m.cle==='validations' && enAttente) p = `<span class="pastille">${enAttente}</span>`;
+      if(m.cle==='preparation' && aPreparer) p = `<span class="pastille">${aPreparer}</span>`;
+      return `<button class="nav-e ${m.cle===vueCourante?'actif':''}" onclick="aller('${m.cle}')">
+                <span class="ic">${m.ic}</span><span>${m.txt}</span>${p}</button>`;
+    }).join('')}
+    <div class="nav-sep"></div>
+    <button class="nav-e" onclick="fermerNav();deconnexion()">
+      <span class="ic">🔄</span><span>Changer d'utilisateur</span></button>
+    <button class="nav-e" onclick="fermerNav();reinitialiser()">
+      <span class="ic">♻️</span><span>Réinitialiser la démo</span></button>`;
+  $('#voile-nav').classList.add('on');
+}
+function fermerNav(){ $('#voile-nav').classList.remove('on'); }
 function rendre(){
   rendreMenu(); rendreBarre();
   const f = { tableau:vueTableau, commandes:vueCommandes, catalogue:vueCatalogue,
@@ -1225,6 +1304,17 @@ function ajouterLigne(articleId){
   }
   rendre();
 }
+/* Incrément tactile : bien plus sûr qu'un champ numérique au pouce. */
+function incQte(articleId, delta){
+  const l = brouillon.lignes.find(x=>x.articleId===articleId);
+  if(!l) return;
+  const d = dispo(articleId, brouillon.debut, brouillon.fin);
+  const q = l.qte + delta;
+  if(q < 1){ retirerLigneBrouillon(articleId); return; }
+  if(q > d){ toast(`Maximum ${d} sur cette période.`, 'err'); return; }
+  l.qte = q; rendre();
+}
+
 function qteLigne(articleId, q){
   const l = brouillon.lignes.find(x=>x.articleId===articleId);
   const d = dispo(articleId, brouillon.debut, brouillon.fin);
@@ -1367,7 +1457,7 @@ function vueSaisie1(){
   <div class="grille deux-col">
     <div>
       <div class="carte" style="margin-bottom:16px">
-        <h3 style="font-size:15px;margin-bottom:14px">Client et période</h3>
+        <h3 class="etiq"><span class="etiq-n">1</span>Client et dates</h3>
         <div class="paire">
           <div class="champ"><label>Client</label>
             <input value="${esc(b.client)}" placeholder="Nom du client ou de l'événement"
@@ -1391,26 +1481,37 @@ function vueSaisie1(){
           — le matériel est immobilisé de l'événement à la récupération</div>
       </div>
 
-      <div class="carte">
-        <h3 style="font-size:15px;margin-bottom:14px">Matériel</h3>
+      <div class="carte" style="margin-bottom:16px">
+        <h3 class="etiq"><span class="etiq-n">2</span>Choisir le matériel</h3>
         ${selecteurArticles(b)}
-        <div class="ligne-sep"></div>
-        <div class="tbl-scroll">
-        <table><thead><tr><th>Article</th><th style="width:110px">Qté</th>
-          <th class="num">P.U./jour</th><th class="num">Total</th><th></th></tr></thead><tbody>
-          ${b.lignes.map(l=>{
-            const d = dispo(l.articleId, b.debut, b.fin);
-            return `<tr>
-              <td><b>${esc(l.nom)}</b><div class="puce-cat">${esc(l.ref)} — ${d} dispo.</div></td>
-              <td><input type="number" min="1" max="${d}" value="${l.qte}" style="width:88px;padding:6px 9px;
-                    background:#0a0a16;border:1px solid var(--bord);border-radius:6px"
-                    onchange="qteLigne('${l.articleId}',this.value)"></td>
-              <td class="num">${fcfa(l.prix)}</td>
-              <td class="num">${fcfa(l.qte*l.prix*t.jours)}</td>
-              <td><button class="btn mini r" onclick="retirerLigneBrouillon('${l.articleId}')">✕</button></td>
-            </tr>`;
-          }).join('') || '<tr><td colspan="5" class="vide">Aucun article — utilisez la liste ci-dessus</td></tr>'}
-        </tbody></table></div>
+      </div>
+
+      <div class="carte">
+        <h3 class="etiq"><span class="etiq-n">3</span>Matériel retenu
+          ${b.lignes.length ? `<span class="etiq-c">${b.lignes.length}</span>` : ''}</h3>
+        ${b.lignes.map(l=>{
+          const d = dispo(l.articleId, b.debut, b.fin);
+          return `<div class="sel">
+            <div class="sel-tete">
+              <div class="sel-nom">${esc(l.nom)}
+                <span class="sel-ref">${esc(l.ref)} · ${fcfa(l.prix)}/jour · ${d} dispo.</span></div>
+              <button class="btn mini r sel-x" title="Retirer"
+                onclick="retirerLigneBrouillon('${l.articleId}')">✕</button>
+            </div>
+            <div class="sel-bas">
+              <div class="pas">
+                <button class="pas-b" ${l.qte<=1?'disabled':''}
+                  onclick="incQte('${l.articleId}',-1)">−</button>
+                <span class="pas-v">${l.qte}</span>
+                <button class="pas-b" ${l.qte>=d?'disabled':''}
+                  onclick="incQte('${l.articleId}',1)">+</button>
+              </div>
+              <div class="sel-tot">${fcfa(l.qte*l.prix*t.jours)}
+                <span class="sel-det">${l.qte} × ${t.jours} j</span></div>
+            </div>
+          </div>`;
+        }).join('') || `<div class="vide" style="padding:26px">
+            <span class="ic">🛒</span>Rien pour l'instant — choisissez du matériel ci-dessus</div>`}
       </div>
     </div>
 
@@ -2303,7 +2404,9 @@ function modale(titre, corps, boutons){
   $('#voile').classList.add('on');
 }
 function fermerModale(){ $('#voile').classList.remove('on'); }
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') fermerModale(); });
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){ fermerModale(); fermerNav(); fermerFacture(); }
+});
 
 /* ---------- Installation sur téléphone ----------
    Le service worker rend l'application installable sur Android et la fait
