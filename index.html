@@ -1,0 +1,2190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#08080f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="DC EVENT">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>DC EVENT COMMANDE</title>
+<style>
+/* ---------------------------------------------------------------
+   DC EVENT COMMANDE - maquette de demonstration hors-ligne
+   Palette calee sur le logo DC EVENT : neon rose + cyan sur noir.
+   --------------------------------------------------------------- */
+:root{
+  --fond:#08080f; --fond2:#0e0e1b; --panneau:#13132339; --carte:#15152a;
+  --bord:#26264a; --bord-clair:#343463;
+  --txt:#e8e8f5; --txt2:#9a9ac0; --txt3:#6b6b90;
+  --rose:#ff2d78; --rose-clair:#ff7aae; --cyan:#22d3ee; --bleu:#3b82f6;
+  --vert:#22c55e; --orange:#f59e0b; --rouge:#ef4444;
+  --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Segoe UI',system-ui,sans-serif; background:var(--fond); color:var(--txt);
+  min-height:100vh; font-size:14px;
+  background-image:radial-gradient(ellipse 80% 50% at 20% 0%, #2a0d3a55, transparent),
+                   radial-gradient(ellipse 60% 50% at 90% 10%, #08325a55, transparent);
+  background-attachment:fixed;
+}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+a{color:var(--cyan)}
+
+/* ---------- Ecran de connexion ---------- */
+#login{
+  position:fixed; inset:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:26px; z-index:100;
+  background:var(--fond);
+  background-image:radial-gradient(ellipse 70% 60% at 50% 30%, #3a0f4a66, transparent),
+                   radial-gradient(ellipse 60% 40% at 50% 100%, #0a3a6666, transparent);
+}
+#login img{width:190px;border-radius:50%;box-shadow:0 0 60px #ff2d7855,0 0 120px #22d3ee33}
+#login h1{font-size:26px;letter-spacing:5px;font-weight:300}
+#login h1 b{font-weight:700;background:linear-gradient(90deg,var(--rose),var(--cyan));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+#login p{color:var(--txt2);margin-top:-16px;font-size:13px}
+.roles{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;padding:0 16px}
+.role{
+  width:210px;padding:22px 18px;border:1px solid var(--bord);border-radius:14px;
+  background:var(--carte);text-align:center;transition:.18s;
+}
+.role:hover{border-color:var(--rose);transform:translateY(-4px);box-shadow:0 10px 34px #ff2d7833}
+.role .ic{font-size:30px;display:block;margin-bottom:10px}
+.role .nom{display:block;font-weight:700;letter-spacing:1.5px;margin-bottom:7px}
+.role .desc{display:block;font-size:12px;color:var(--txt2);line-height:1.5}
+
+/* ---------- Ossature ---------- */
+#app{display:none;grid-template-columns:236px 1fr;min-height:100vh}
+#app.on{display:grid}
+aside{
+  background:#0b0b16; border-right:1px solid var(--bord);
+  padding:18px 12px; display:flex; flex-direction:column; gap:4px;
+  position:sticky; top:0; height:100vh; overflow-y:auto;
+}
+.marque{display:flex;align-items:center;gap:11px;padding:4px 8px 18px}
+.marque img{width:42px;height:42px;border-radius:50%;box-shadow:0 0 18px #ff2d7855}
+.marque .t1{font-weight:700;letter-spacing:2px;font-size:14px;line-height:1.2}
+.marque .t2{font-size:10px;color:var(--txt3);letter-spacing:2.5px}
+nav button{
+  display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;
+  border-radius:8px;color:var(--txt2);text-align:left;transition:.14s;font-size:13.5px;
+}
+nav button:hover{background:#ffffff0d;color:var(--txt)}
+nav button.actif{background:linear-gradient(90deg,#ff2d7826,transparent);color:#fff;
+  box-shadow:inset 2px 0 0 var(--rose)}
+nav button .pastille{margin-left:auto;background:var(--rose);color:#fff;font-size:10px;
+  font-weight:700;padding:2px 7px;border-radius:20px}
+.qui{margin-top:auto;border-top:1px solid var(--bord);padding-top:14px}
+.qui .r{font-size:11px;color:var(--txt3);letter-spacing:1.5px}
+.qui .n{font-weight:600;margin:2px 0 10px}
+
+main{padding:26px 30px 60px;max-width:1500px}
+.tbl-scroll{overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}
+
+/* Fiche de travail du préparateur : lisible au pouce, sans défilement latéral */
+/* Fil d'Ariane des étapes de saisie */
+.ruban{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.ruban-e{display:flex;align-items:center;gap:9px;padding:8px 15px;border-radius:26px;
+  border:1px solid var(--bord);background:var(--carte);color:var(--txt3);font-size:13px}
+.ruban-e.actif{border-color:var(--rose);color:var(--txt);box-shadow:0 0 0 3px #ff2d7818}
+.ruban-e.fait{color:var(--txt2);border-color:#22c55e55}
+.ruban-n{width:21px;height:21px;border-radius:50%;background:#ffffff14;color:inherit;
+  display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700}
+.ruban-e.actif .ruban-n{background:linear-gradient(135deg,var(--rose),#c026d3);color:#fff}
+.ruban-e.fait .ruban-n{background:#22c55e2e;color:#6ee7a0}
+.ruban-t{flex:1;min-width:16px;height:1px;background:var(--bord)}
+
+.job{background:#0a0a16;border:1px solid var(--bord);border-radius:10px;
+  padding:13px 15px;margin-bottom:10px}
+.job:last-child{margin-bottom:0}
+.job-tete{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:7px}
+.job-num{font-variant-numeric:tabular-nums;font-size:12px;color:var(--txt3);letter-spacing:.5px}
+.job-qte{margin-left:auto;background:#22d3ee1f;color:var(--cyan);font-size:11.5px;
+  font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.job-client{font-size:16px;font-weight:700;margin-bottom:6px;line-height:1.3}
+.job-info{color:var(--txt2);font-size:13px;line-height:1.7}
+.job-actions{display:flex;gap:9px;margin-top:12px}
+.job-actions .btn{flex:1;padding:9px 12px}
+.deux-col{grid-template-columns:1fr 380px;align-items:start}
+
+/* Barre du haut : mobile uniquement (masquee en grand ecran) */
+#barre{display:none}
+.entete{display:flex;align-items:flex-end;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+.entete h2{font-size:23px;font-weight:600}
+.entete .sous{color:var(--txt2);font-size:13px;margin-top:3px}
+.entete .droite{margin-left:auto;display:flex;gap:9px;flex-wrap:wrap}
+
+/* ---------- Briques ---------- */
+.carte{background:var(--carte);border:1px solid var(--bord);border-radius:var(--r);padding:18px}
+.grille{display:grid;gap:16px}
+.stats{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.stat .lab{font-size:11px;letter-spacing:1.4px;color:var(--txt3);text-transform:uppercase}
+.stat .val{font-size:27px;font-weight:700;margin:7px 0 2px}
+.stat .det{font-size:12px;color:var(--txt2)}
+.stat.rose .val{color:var(--rose-clair)} .stat.cyan .val{color:var(--cyan)}
+.stat.orange .val{color:var(--orange)} .stat.vert .val{color:var(--vert)}
+.stat.rouge .val{color:var(--rouge)}
+
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:11px;letter-spacing:1.2px;color:var(--txt3);
+  text-transform:uppercase;padding:9px 10px;border-bottom:1px solid var(--bord);font-weight:600}
+td{padding:11px 10px;border-bottom:1px solid #ffffff0a;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#ffffff07}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+th.num{text-align:right}
+
+.btn{padding:8px 15px;border-radius:8px;background:#ffffff12;border:1px solid var(--bord);
+  transition:.15s;font-size:13px;white-space:nowrap}
+.btn:hover{background:#ffffff1f;border-color:var(--bord-clair)}
+.btn.p{background:linear-gradient(135deg,var(--rose),#c026d3);border-color:transparent;
+  color:#fff;font-weight:600;box-shadow:0 4px 18px #ff2d7840}
+.btn.p:hover{filter:brightness(1.14)}
+.btn.c{background:linear-gradient(135deg,var(--cyan),var(--bleu));border-color:transparent;
+  color:#04121c;font-weight:700}
+.btn.v{background:#22c55e22;border-color:#22c55e55;color:#6ee7a0}
+.btn.r{background:#ef444422;border-color:#ef444455;color:#fca5a5}
+.btn.mini{padding:5px 10px;font-size:12px}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+
+.et{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;
+  font-weight:600;letter-spacing:.4px;white-space:nowrap}
+.et.DEVIS{background:#6b7280335;background:#6b728033;color:#c4c9d4}
+.et.RESERVEE{background:#3b82f628;color:#93c5fd}
+.et.PREPAREE{background:#a855f728;color:#d8b4fe}
+.et.LIVREE{background:#f59e0b28;color:#fcd34d}
+.et.RETOURNEE{background:#22d3ee28;color:#7de8f8}
+.et.FACTUREE{background:#22c55e28;color:#86efac}
+.et.SOLDEE{background:#22c55e40;color:#bbf7d0}
+.et.ANNULEE{background:#ef444428;color:#fca5a5}
+.et.EN_ATTENTE{background:#f59e0b28;color:#fcd34d}
+.et.APPROUVEE{background:#22c55e28;color:#86efac}
+.et.REFUSEE{background:#ef444428;color:#fca5a5}
+
+.champ{margin-bottom:14px}
+.champ label{display:block;font-size:11.5px;letter-spacing:1.1px;color:var(--txt3);
+  text-transform:uppercase;margin-bottom:6px}
+.champ input,.champ select,.champ textarea{
+  width:100%;padding:9px 12px;background:#0a0a16;border:1px solid var(--bord);
+  border-radius:8px;outline:none;transition:.15s}
+.champ input:focus,.champ select:focus,.champ textarea:focus{
+  border-color:var(--rose);box-shadow:0 0 0 3px #ff2d7822}
+.champ textarea{resize:vertical;min-height:78px}
+.paire{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* ---------- Fenetre modale ---------- */
+#voile{position:fixed;inset:0;background:#000000c4;backdrop-filter:blur(3px);
+  display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+#voile.on{display:flex}
+.modale{background:var(--fond2);border:1px solid var(--bord-clair);border-radius:14px;
+  width:100%;max-width:640px;max-height:90vh;overflow-y:auto;
+  box-shadow:0 30px 90px #000c}
+.modale header{padding:18px 22px;border-bottom:1px solid var(--bord);
+  display:flex;align-items:center;gap:12px}
+.modale header h3{font-size:17px;font-weight:600}
+.modale header .x{margin-left:auto;color:var(--txt3);font-size:22px;line-height:1}
+.modale header .x:hover{color:var(--txt)}
+.modale .corps{padding:22px}
+.modale footer{padding:16px 22px;border-top:1px solid var(--bord);
+  display:flex;gap:10px;justify-content:flex-end}
+
+/* =====================================================================
+   FACTURE — document sur fond blanc, pensé pour l'impression A4
+   ===================================================================== */
+#voile-facture{position:fixed;inset:0;background:#000000d0;backdrop-filter:blur(3px);
+  display:none;align-items:flex-start;justify-content:center;z-index:250;
+  padding:20px;overflow-y:auto}
+#voile-facture.on{display:flex}
+#facture-boite{width:100%;max-width:820px}
+#facture-barre{display:flex;gap:10px;justify-content:flex-end;margin-bottom:12px}
+#facture{background:#fff;color:#1a1a1a;padding:38px 40px;border-radius:6px;
+  font-size:13px;line-height:1.5;box-shadow:0 24px 70px #000a}
+#facture img{width:66px;height:66px;border-radius:50%;flex:0 0 auto}
+.fac-tete{display:flex;justify-content:space-between;gap:26px;
+  padding-bottom:20px;border-bottom:2px solid #1a1a1a;margin-bottom:22px}
+.fac-emet{display:flex;gap:15px;align-items:flex-start}
+.fac-nom{font-size:19px;font-weight:800;letter-spacing:.6px;margin-bottom:3px}
+.fac-p{color:#555;font-size:11.5px;line-height:1.55}
+.fac-lab{font-size:10px;letter-spacing:1.3px;text-transform:uppercase;
+  color:#888;font-weight:700;margin-bottom:4px}
+.fac-fort{font-weight:700;font-size:14px;margin-bottom:2px}
+.fac-ref{text-align:right;flex:0 0 auto}
+.fac-titre{font-size:25px;font-weight:800;letter-spacing:3px;color:#c2185b}
+.fac-num{font-size:15px;font-weight:700;margin:2px 0 6px}
+.fac-parties{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-bottom:22px}
+.fac-lignes-wrap{margin-bottom:22px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.fac-lignes{width:100%;border-collapse:collapse;min-width:470px}
+.fac-lignes th{background:#f2f2f5;color:#444;font-size:10px;letter-spacing:.9px;
+  text-transform:uppercase;padding:9px 10px;border:none;text-align:left}
+.fac-lignes th.num,.fac-lignes td.num{text-align:right}
+.fac-lignes td{padding:8px 10px;border-bottom:1px solid #e8e8ee;font-size:12.5px}
+.fac-bas{display:grid;grid-template-columns:1fr 300px;gap:26px;align-items:start}
+.fac-mentions .fac-p{margin-bottom:2px}
+.fac-totaux{width:100%;border-collapse:collapse}
+.fac-totaux td{padding:6px 10px;font-size:12.5px;border:none}
+.fac-totaux .ft-lab{color:#555}
+.fac-totaux .ft-val{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fac-totaux .ft-sous td{border-top:1px solid #ccc;font-weight:700;color:#1a1a1a}
+.fac-totaux .ft-net td{border-top:2px solid #1a1a1a;font-size:15px;font-weight:800;
+  color:#c2185b;padding-top:9px}
+.fac-pied{margin-top:26px;padding-top:14px;border-top:1px solid #e0e0e6;
+  text-align:center;color:#888;font-size:10.5px}
+
+@media print{
+  body{background:#fff!important}
+  body > *{display:none!important}
+  #voile-facture{display:block!important;position:static;padding:0;background:none;
+    backdrop-filter:none;overflow:visible}
+  #facture-barre{display:none!important}
+  #facture-boite{max-width:none}
+  #facture{box-shadow:none;border-radius:0;padding:0;font-size:11.5pt}
+  .fac-lignes-wrap{overflow:visible!important}
+  .fac-lignes{min-width:0;page-break-inside:avoid}
+  @page{size:A4;margin:14mm}
+}
+
+/* ---------- Divers ---------- */
+.alerte{border-left:3px solid var(--orange);background:#f59e0b14;padding:12px 15px;
+  border-radius:0 8px 8px 0;font-size:13px;line-height:1.6;margin-bottom:16px}
+.alerte.r{border-color:var(--rouge);background:#ef444414}
+.alerte.v{border-color:var(--vert);background:#22c55e14}
+.alerte.c{border-color:var(--cyan);background:#22d3ee14}
+.vide{text-align:center;padding:46px 20px;color:var(--txt3)}
+.vide .ic{font-size:38px;display:block;margin-bottom:12px;opacity:.5}
+#toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,90px);
+  background:var(--fond2);border:1px solid var(--bord-clair);padding:13px 22px;
+  border-radius:10px;box-shadow:0 14px 40px #000b;transition:.3s;z-index:300;
+  max-width:90vw;text-align:center}
+#toast.on{transform:translate(-50%,0)}
+#toast.err{border-color:#ef4444;box-shadow:0 14px 40px #ef444433}
+#toast.ok{border-color:#22c55e;box-shadow:0 14px 40px #22c55e33}
+.ligne-sep{height:1px;background:var(--bord);margin:18px 0}
+.puce-cat{font-size:10.5px;color:var(--txt3);letter-spacing:1px;text-transform:uppercase}
+.dispo-ok{color:var(--vert);font-weight:600}
+.dispo-bas{color:var(--orange);font-weight:600}
+.dispo-non{color:var(--rouge);font-weight:600}
+.jauge{height:5px;background:#ffffff12;border-radius:3px;overflow:hidden;margin-top:6px}
+.jauge i{display:block;height:100%;border-radius:3px}
+.scenario{counter-reset:e}
+.scenario li{margin:0 0 11px 0;padding-left:34px;position:relative;line-height:1.55;
+  list-style:none;font-size:13.5px}
+.scenario li::before{counter-increment:e;content:counter(e);position:absolute;left:0;top:-1px;
+  width:23px;height:23px;border-radius:50%;background:linear-gradient(135deg,var(--rose),#c026d3);
+  color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+/* =====================================================================
+   TELEPHONE — barre de titre en haut, onglets en bas, comme une vraie
+   application mobile. Le preparateur travaille au depot, sur son telephone.
+   ===================================================================== */
+@media(max-width:820px){
+  #app.on{display:block}
+
+  /* --- Barre du haut --- */
+  #barre{
+    display:flex; align-items:center; gap:10px;
+    position:fixed; top:0; left:0; right:0; z-index:60;
+    height:calc(56px + env(safe-area-inset-top));
+    padding:env(safe-area-inset-top) 12px 0;
+    background:#0b0b16f2; backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--bord);
+  }
+  #barre img{width:34px;height:34px;border-radius:50%;box-shadow:0 0 14px #ff2d7855;flex:0 0 auto}
+  #barre .t1{font-weight:700;letter-spacing:1.6px;font-size:12px;line-height:1.2}
+  #barre .t2{font-size:13px;color:var(--txt2);line-height:1.25;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:44vw}
+  #barre .compte{margin-left:auto;flex:0 0 auto}
+
+  /* --- Onglets du bas --- */
+  aside{
+    position:fixed; left:0; right:0; bottom:0; top:auto; z-index:60;
+    height:auto; display:block; padding:0;
+    border-right:none; border-top:1px solid var(--bord);
+    background:#0b0b16f2; backdrop-filter:blur(10px);
+  }
+  .marque,.qui{display:none}
+  nav{display:flex; overflow-x:auto; scrollbar-width:none;
+      padding-bottom:env(safe-area-inset-bottom)}
+  nav::-webkit-scrollbar{display:none}
+  nav button{
+    flex:1 0 auto; min-width:76px; max-width:120px;
+    flex-direction:column; gap:3px; padding:9px 6px 8px;
+    border-radius:0; font-size:10px; letter-spacing:.2px;
+    text-align:center; line-height:1.25;
+  }
+  nav button span:first-child{font-size:19px;line-height:1}
+  nav button.actif{background:linear-gradient(180deg,#ff2d7826,transparent);
+    box-shadow:inset 0 2px 0 var(--rose)}
+  nav button .pastille{position:absolute;margin:0;transform:translate(16px,-4px);
+    padding:1px 6px;font-size:9px}
+  nav button{position:relative}
+
+  /* --- Contenu --- */
+  main{padding:calc(68px + env(safe-area-inset-top)) 13px
+              calc(84px + env(safe-area-inset-bottom))}
+  .entete{margin-bottom:16px} .entete h2{font-size:20px}
+  .entete .droite{margin-left:0;width:100%}
+  .entete .droite .btn{flex:1}
+  .paire,.deux-col{grid-template-columns:1fr}
+  .deux-col > div:last-child > .carte[style*="sticky"]{position:static!important}
+  .carte{padding:15px}
+  .stat .val{font-size:24px}
+  /* Les tableaux restants défilent latéralement plutôt que d'écraser
+     chaque cellule sur trois lignes. */
+  th,td{padding:9px 10px;white-space:nowrap}
+  .job-actions{flex-direction:column-reverse}
+  .job-actions .btn{width:100%;padding:11px 12px;font-size:13.5px}
+  .modale{max-height:92vh;border-radius:14px}
+  .modale .corps{padding:17px}
+  .modale footer{padding:13px 16px;flex-wrap:wrap}
+  .modale footer .btn{flex:1 0 auto}
+  #toast{bottom:calc(88px + env(safe-area-inset-bottom))}
+
+  /* Facture sur téléphone : tout se met en colonne, seul le tableau défile */
+  #voile-facture{padding:12px}
+  #facture{padding:22px 17px;font-size:12px}
+  #facture img{width:52px;height:52px}
+  .fac-tete{flex-direction:column;gap:15px;padding-bottom:16px;margin-bottom:18px}
+  .fac-ref{text-align:left}
+  .fac-titre{font-size:21px}
+  .fac-parties,.fac-bas{grid-template-columns:1fr;gap:16px}
+  .fac-lignes th,.fac-lignes td{white-space:nowrap}
+
+  /* --- Connexion --- */
+  #login{justify-content:flex-start;overflow-y:auto;
+    padding:calc(26px + env(safe-area-inset-top)) 16px 34px;gap:20px}
+  #login img{width:136px}
+  #login h1{font-size:20px;letter-spacing:2.5px}
+  #login p{margin-top:-12px}
+  .roles{flex-direction:column;width:100%;align-items:center}
+  .role{width:100%;max-width:360px;padding:16px}
+  .role .ic{font-size:25px;margin-bottom:7px}
+}
+</style>
+</head>
+<body>
+
+<!-- =================== CONNEXION =================== -->
+<div id="login">
+  <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9J2cnIHgxPScwJyB5MT0nMCcgeDI9JzEnIHkyPScxJz48c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZjJkNzgnLz48c3RvcCBvZmZzZXQ9JzEnIHN0b3AtY29sb3I9JyMyMmQzZWUnLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48Y2lyY2xlIGN4PSc1MCcgY3k9JzUwJyByPSc0OCcgZmlsbD0nIzBiMGIxNicvPjxjaXJjbGUgY3g9JzUwJyBjeT0nNTAnIHI9JzQ1JyBmaWxsPSdub25lJyBzdHJva2U9J3VybCgjZyknIHN0cm9rZS13aWR0aD0nMycvPjx0ZXh0IHg9JzUwJyB5PSc2MicgZm9udC1mYW1pbHk9J1NlZ29lIFVJLEFyaWFsLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMzInIGZvbnQtd2VpZ2h0PSc3MDAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9J3VybCgjZyknPkRDPC90ZXh0Pjwvc3ZnPg==" alt="Logo de démonstration">
+  <div style="text-align:center">
+    <h1>DC EVENT <b>COMMANDE</b></h1>
+  </div>
+  <p>Gestion des locations de matériel événementiel — DC EVENT</p>
+  <div class="roles">
+    <button class="role" onclick="connexion('ADMIN')">
+      <span class="ic">🔑</span><span class="nom">ADMIN</span>
+      <span class="desc">Valide les retraits, annulations et remises. Voit tout.</span>
+    </button>
+    <button class="role" onclick="connexion('MANAGER')">
+      <span class="ic">📋</span><span class="nom">MANAGER</span>
+      <span class="desc">Crée les devis, réserve le matériel, facture les clients.</span>
+    </button>
+    <button class="role" onclick="connexion('PREPARATEUR')">
+      <span class="ic">📦</span><span class="nom">PRÉPARATEUR</span>
+      <span class="desc">Sort le matériel du dépôt et contrôle les retours.</span>
+    </button>
+  </div>
+  <p style="font-size:11.5px;color:var(--txt3);margin-top:6px">
+    Maquette de démonstration — fonctionne hors connexion, données stockées sur ce poste
+  </p>
+</div>
+
+<!-- =================== APPLICATION =================== -->
+<div id="app">
+  <header id="barre">
+    <img id="barre-logo" alt="">
+    <div style="min-width:0">
+      <div class="t1">DC EVENT</div>
+      <div class="t2" id="barre-vue">Tableau de bord</div>
+    </div>
+    <button class="btn mini compte" id="barre-compte" onclick="menuCompte()">Compte</button>
+  </header>
+  <aside>
+    <div class="marque">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9J2cnIHgxPScwJyB5MT0nMCcgeDI9JzEnIHkyPScxJz48c3RvcCBvZmZzZXQ9JzAnIHN0b3AtY29sb3I9JyNmZjJkNzgnLz48c3RvcCBvZmZzZXQ9JzEnIHN0b3AtY29sb3I9JyMyMmQzZWUnLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48Y2lyY2xlIGN4PSc1MCcgY3k9JzUwJyByPSc0OCcgZmlsbD0nIzBiMGIxNicvPjxjaXJjbGUgY3g9JzUwJyBjeT0nNTAnIHI9JzQ1JyBmaWxsPSdub25lJyBzdHJva2U9J3VybCgjZyknIHN0cm9rZS13aWR0aD0nMycvPjx0ZXh0IHg9JzUwJyB5PSc2MicgZm9udC1mYW1pbHk9J1NlZ29lIFVJLEFyaWFsLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMzInIGZvbnQtd2VpZ2h0PSc3MDAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9J3VybCgjZyknPkRDPC90ZXh0Pjwvc3ZnPg==" alt="">
+      <div><div class="t1">DC EVENT</div><div class="t2">COMMANDE</div></div>
+    </div>
+    <nav id="nav"></nav>
+    <div class="qui">
+      <div class="r" id="qui-role"></div>
+      <div class="n" id="qui-nom"></div>
+      <button class="btn mini" style="width:100%" onclick="deconnexion()">Changer d'utilisateur</button>
+      <button class="btn mini" style="width:100%;margin-top:6px" onclick="reinitialiser()">Réinitialiser la démo</button>
+    </div>
+  </aside>
+  <main id="vue"></main>
+</div>
+
+<div id="voile" onclick="if(event.target===this)fermerModale()"><div class="modale" id="modale"></div></div>
+
+<!-- Modèle de facture, imprimable -->
+<div id="voile-facture" onclick="if(event.target===this)fermerFacture()">
+  <div id="facture-boite">
+    <div id="facture-barre">
+      <button class="btn" onclick="fermerFacture()">Fermer</button>
+      <button class="btn c" onclick="imprimerFacture()">Imprimer / PDF</button>
+    </div>
+    <div id="facture"></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* =========================================================================
+   DC EVENT COMMANDE
+   Maquette de demonstration. Tout tient dans ce fichier : aucune connexion
+   reseau, aucune installation. Les donnees vivent dans localStorage.
+
+   Regle centrale du cahier des charges :
+     le MANAGER ajoute librement, mais retirer un article, annuler une
+     commande ou accorder une remise > 10 % exige une validation ADMIN
+     assortie d'un motif.
+   ========================================================================= */
+
+const CLE = 'dc-event-commande.v2';   // v2 : conditions financières par commande
+const SEUIL_REMISE = 10;          // % au-dela duquel l'ADMIN doit valider
+const TVA_DEFAUT   = 18;          // taux en vigueur en Côte d'Ivoire
+let S = null;                      // etat complet de l'application
+let U = null;                      // utilisateur connecte
+let vueCourante = 'tableau';
+let brouillon = null;              // commande en cours de saisie
+
+/* ---------- Utilitaires ---------- */
+const $ = s => document.querySelector(s);
+const auj = () => new Date(new Date().toDateString());
+function jour(n){ const d = auj(); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function frDate(iso){ if(!iso) return '—';
+  const [a,m,j] = iso.split('-'); return `${j}/${m}/${a}`; }
+function frCourt(iso){ const [a,m,j] = iso.split('-'); return `${j}/${m}`; }
+function fcfa(n){ return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,' ') + ' F'; }
+function nbJours(d1,d2){ return Math.max(1, Math.round((new Date(d2)-new Date(d1))/864e5)+1); }
+function chevauche(a1,a2,b1,b2){ return a1 <= b2 && b1 <= a2; }
+function esc(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function uid(p){ return p + '-' + Math.random().toString(36).slice(2,8).toUpperCase(); }
+
+function toast(msg, type){
+  const t = $('#toast');
+  t.textContent = msg; t.className = 'on ' + (type||'');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.className='', 3400);
+}
+
+/* ---------- Persistance ---------- */
+// Ouvert en double-clic (file://), certains navigateurs refusent localStorage.
+// L'application doit continuer a tourner : on perd la persistance, pas la demo.
+let persistanceOk = true;
+function sauver(){
+  if(!persistanceOk) return;
+  try{ localStorage.setItem(CLE, JSON.stringify(S)); }
+  catch(e){ persistanceOk = false;
+    toast("Navigateur en lecture seule : la démo fonctionne, mais rien ne sera conservé à la fermeture."); }
+}
+function charger(){
+  try{ const b = localStorage.getItem(CLE); if(b){ S = JSON.parse(b); return true; } }catch(e){}
+  return false;
+}
+function reinitialiser(){
+  if(!confirm("Remettre la démonstration à son état initial ?\nToutes les saisies faites depuis le début seront effacées.")) return;
+  try{ localStorage.removeItem(CLE); }catch(e){}
+  location.reload();
+}
+
+/* ---------- Journal de tracabilite ---------- */
+function tracer(action, detail, cible){
+  S.journal.unshift({
+    id: uid('J'), quand: new Date().toISOString(),
+    qui: U ? U.nom : 'Système', role: U ? U.role : 'SYSTEME',
+    action, detail, cible: cible || ''
+  });
+  if(S.journal.length > 300) S.journal.length = 300;
+}
+
+/* =========================================================================
+   JEU DE DONNEES INITIAL
+   ========================================================================= */
+function semer(){
+  // valeur = prix de remplacement à neuf, base des retenues sur caution
+  const art = (ref,nom,cat,qte,prix,valeur,unite) =>
+    ({id:ref,ref,nom,cat,qte,prix,valeur,unite:unite||'unité'});
+  S = {
+    societe:{
+      nom:'DC EVENT', activite:'Location de matériel événementiel et décoration',
+      tel:'07 00 00 00 01', mail:'demo@dc-event.example', ville:'Abidjan, Côte d\'Ivoire',
+      // À REMPLACER par les mentions légales réelles avant tout usage commercial
+      rccm:'RCCM CI-ABJ-XXXX-X-XXXXX', cc:'Compte contribuable : XXXXXXXX',
+      tva:TVA_DEFAUT, delaiReglement:30
+    },
+    articles:[
+      art('SON-01','Enceinte active 15" 800W','Sonorisation',12,25000,450000),
+      art('SON-02','Caisson de basse 18"','Sonorisation',6,35000,600000),
+      art('SON-03','Table de mixage 12 voies','Sonorisation',4,30000,500000),
+      art('SON-04','Micro HF main (paire)','Sonorisation',8,15000,250000),
+      art('ECL-01','Par LED 54x3W','Éclairage',24,8000,85000),
+      art('ECL-02','Lyre beam 230W','Éclairage',8,40000,700000),
+      art('ECL-03','Machine à fumée 1500W','Éclairage',4,20000,180000),
+      art('ECL-04','Projecteur architectural','Éclairage',16,10000,110000),
+      art('MOB-01','Chaise Napoléon dorée','Mobilier',400,1500,18000),
+      art('MOB-02','Table ronde 180 cm (10 pers.)','Mobilier',45,7000,75000),
+      art('MOB-03','Table serpentin','Mobilier',12,25000,260000),
+      art('MOB-04','Housse de chaise + nœud','Mobilier',400,800,6000),
+      art('MOB-05','Nappe ronde satin','Mobilier',60,2500,15000),
+      art('STR-01','Tente 5x10 m','Structure',6,150000,2500000),
+      art('STR-02','Barnum 3x3 m','Structure',14,35000,450000),
+      art('STR-03','Praticable 2x1 m','Structure',20,12000,140000),
+      art('VID-01','Écran LED P3 (m²)','Vidéo',18,60000,900000,'m²'),
+      art('VID-02','Vidéoprojecteur 5000 lumens','Vidéo',4,75000,1200000),
+      art('VID-03','Écran de projection 3 m','Vidéo',3,30000,220000),
+      art('DEC-01','Arche florale','Décoration',5,90000,400000),
+      art('DEC-02','Tapis rouge 10 m','Décoration',4,45000,300000),
+      art('DEC-03','Colonne lumineuse','Décoration',20,9000,95000)
+    ],
+    commandes:[], validations:[], paiements:[], journal:[],
+    compteur:{ cmd:0, fac:0 }
+  };
+
+  const L = (id,q) => { const a = S.articles.find(x=>x.id===id);
+    return {articleId:id, ref:a.ref, nom:a.nom, qte:q, prix:a.prix}; };
+
+  function cmd(o){
+    S.compteur.cmd++;
+    const c = Object.assign({
+      id: uid('C'),
+      num: 'CMD-2026-' + String(S.compteur.cmd).padStart(3,'0'),
+      creeeLe: new Date().toISOString(), creeePar:'Konan (Manager)',
+      remise:0, escompte:0, caution:0, acompte:0, tva:TVA_DEFAUT,
+      facture:null, retour:null, notes:''
+    }, o);
+    S.commandes.push(c); return c;
+  }
+
+  cmd({ client:'Mariage Koffi & Aya', tel:'07 08 11 22 33', lieu:'Espace Latrille, Cocody',
+        debut:jour(4), fin:jour(6), statut:'RESERVEE', caution:100000, acompte:500000,
+        lignes:[L('MOB-01',150), L('MOB-04',150), L('MOB-02',15), L('DEC-01',1), L('DEC-02',1), L('ECL-01',8)] });
+
+  cmd({ client:'Séminaire Groupe Alpha', tel:'01 44 55 66 77', lieu:'Hôtel Ivoire, Plateau',
+        debut:jour(0), fin:jour(1), statut:'LIVREE',
+        lignes:[L('SON-01',4), L('SON-03',1), L('SON-04',2), L('VID-02',2), L('VID-03',2), L('MOB-02',12)] });
+
+  const c3 = cmd({ client:'Anniversaire Mme Diarra', tel:'05 99 88 77 66', lieu:'Riviera Palmeraie',
+        debut:jour(-4), fin:jour(-3), statut:'RETOURNEE', caution:150000,
+        lignes:[L('SON-01',2), L('ECL-01',6), L('ECL-03',1), L('MOB-01',60), L('MOB-05',6)] });
+  c3.retour = { le:jour(-2), casse:[{ref:'ECL-01', qte:1, note:'Par LED HS — alimentation grillée'}],
+                manquant:[{ref:'MOB-05', qte:2, note:'2 nappes non restituées'}] };
+  // Le client a réglé la location et la caution à la réservation : c'est ce qui
+  // rend la restitution du solde démontrable après arbitrage des dégâts.
+  S.paiements.push({ id:uid('P'), commandeId:c3.id,
+                     montant: Math.round(totalCommande(c3).aEncaisser),
+                     mode:'Virement', le:jour(-4), par:'Konan (Manager)' });
+
+  cmd({ client:'Lancement produit Novatel CI', tel:'27 20 30 40 50', lieu:'Sofitel, Plateau',
+        debut:jour(9), fin:jour(10), statut:'DEVIS',
+        lignes:[L('VID-01',12), L('SON-01',6), L('SON-02',2), L('ECL-02',6), L('STR-03',8)] });
+
+  const c5 = cmd({ client:'Baptême Famille Yao', tel:'07 12 34 56 78', lieu:'Yopougon Niangon',
+        debut:jour(-12), fin:jour(-11), statut:'FACTUREE', remise:5, escompte:2, caution:50000,
+        lignes:[L('MOB-01',80), L('MOB-02',8), L('SON-01',2), L('STR-02',2)] });
+  S.compteur.fac++;
+  c5.facture = { num:'FAC-2026-'+String(S.compteur.fac).padStart(3,'0'), le:jour(-10) };
+  S.paiements.push({ id:uid('P'), commandeId:c5.id, montant:150000, mode:'Espèces',
+                     le:jour(-10), par:'Konan (Manager)' });
+
+  // Une demande deja en attente, pour que l'ecran de validation ne soit pas vide
+  const cRes = S.commandes.find(c=>c.statut==='RESERVEE');
+  S.validations.push({
+    id: uid('V'), commandeId: cRes.id, type:'REMISE',
+    motif:"Client fidèle, 4e location cette année — geste commercial demandé.",
+    demandeur:'Konan (Manager)', quand:new Date(Date.now()-3600e3).toISOString(),
+    statut:'EN_ATTENTE', charge:{ remise:15 }
+  });
+
+  S.journal = [];
+  tracer('Initialisation','Jeu de données de démonstration chargé');
+  sauver();
+}
+
+/* =========================================================================
+   DISPONIBILITE  —  le stock est un calendrier, pas un compteur
+   ========================================================================= */
+const STATUTS_BLOQUANTS = ['RESERVEE','PREPAREE','LIVREE'];
+
+function reserve(articleId, d1, d2, saufCmdId){
+  let n = 0;
+  for(const c of S.commandes){
+    if(c.id === saufCmdId) continue;
+    if(!STATUTS_BLOQUANTS.includes(c.statut)) continue;
+    if(!chevauche(c.debut, c.fin, d1, d2)) continue;
+    for(const l of c.lignes) if(l.articleId === articleId) n += l.qte;
+  }
+  return n;
+}
+function dispo(articleId, d1, d2, saufCmdId){
+  const a = S.articles.find(x=>x.id===articleId);
+  return a.qte - reserve(articleId, d1, d2, saufCmdId);
+}
+
+/* =========================================================================
+   CALCULS FINANCIERS — cascade normalisée d'une facture
+     Brut HT
+       − remise commerciale      (geste sur le prix)
+     = net commercial
+       − escompte                (geste pour paiement anticipé)
+     = net financier HT
+       + TVA
+     = total TTC
+       + caution                 (consignée, remboursable, hors TVA et hors CA)
+     = total à encaisser
+       − déjà réglé
+     = net à payer
+   ========================================================================= */
+function totalCommande(c){
+  const j = nbJours(c.debut, c.fin);
+  const brut = c.lignes.reduce((s,l)=>s + l.qte * l.prix * j, 0);
+
+  const tauxRemise   = c.remise   || 0;
+  const tauxEscompte = c.escompte || 0;
+  const tauxTva      = (c.tva === undefined ? S.societe.tva : c.tva);
+
+  const remise   = brut * tauxRemise / 100;
+  const netCom   = brut - remise;
+  const escompte = netCom * tauxEscompte / 100;
+  const netFin   = netCom - escompte;
+  const tva      = netFin * tauxTva / 100;
+  const ttc      = netFin + tva;
+  const caution  = c.caution || 0;
+
+  // Retenues pour casse et matériel non restitué, imputées sur la caution.
+  // Ce sont des indemnités, pas une vente : elles ne portent pas la TVA.
+  const retenue = (c.retenues||[]).reduce((s,x)=>s+x.montant, 0);
+  const cautionRendue = Math.max(0, caution - retenue);
+  const excedent      = Math.max(0, retenue - caution);
+
+  return { jours:j, brut, tauxRemise, remise, netCom, tauxEscompte, escompte,
+           netFin, tauxTva, tva, ttc, caution,
+           retenue, cautionRendue, excedent,
+           aEncaisser: ttc + caution,     // avant retour : location + consigne
+           duFinal: ttc + retenue,        // après retour : location + dégâts
+           net: ttc };            // « net » = chiffre d'affaires, caution exclue
+}
+function encaisse(cmdId){
+  return S.paiements.filter(p=>p.commandeId===cmdId).reduce((s,p)=>s+p.montant,0);
+}
+/* Ce que le client doit réellement : tant que le retour n'est pas arbitré,
+   la caution reste consignée ; ensuite elle est soldée contre les dégâts. */
+function duTotal(c){
+  const t = totalCommande(c);
+  return c.retenuesFaites ? t.duFinal : t.aEncaisser;
+}
+function reste(c){ return Math.max(0, duTotal(c) - encaisse(c.id)); }
+function aRestituer(c){ return Math.max(0, encaisse(c.id) - duTotal(c)); }
+function incidents(c){
+  if(!c.retour) return [];
+  return [...c.retour.casse.map(x=>Object.assign({type:'CASSE'},x)),
+          ...c.retour.manquant.map(x=>Object.assign({type:'MANQUANT'},x))];
+}
+
+/* Réduction totale consentie au client : c'est elle qui déclenche l'ADMIN. */
+function reductionTotale(c){ return (c.remise||0) + (c.escompte||0); }
+
+/* =========================================================================
+   REGLE DE VALIDATION — le coeur du cahier des charges
+   ========================================================================= */
+function exigeValidation(type, valeur){
+  if(U.role === 'ADMIN') return false;             // l'admin agit directement
+  if(type === 'REMISE')  return valeur > SEUIL_REMISE;
+  return type === 'RETRAIT' || type === 'ANNULATION';
+}
+function demanderValidation(commandeId, type, motif, charge){
+  S.validations.unshift({
+    id: uid('V'), commandeId, type, motif,
+    demandeur: U.nom, quand: new Date().toISOString(),
+    statut:'EN_ATTENTE', charge
+  });
+  tracer('Demande de validation', `${type} — ${motif}`, commandeId);
+  sauver();
+}
+function appliquer(v){
+  const c = S.commandes.find(x=>x.id===v.commandeId);
+  if(!c) return;
+  if(v.type === 'RETRAIT'){
+    const i = c.lignes.findIndex(l=>l.articleId===v.charge.articleId);
+    if(i>=0) c.lignes.splice(i,1);
+  } else if(v.type === 'ANNULATION'){
+    c.statut = 'ANNULEE';
+  } else if(v.type === 'REMISE'){
+    c.remise   = v.charge.remise;
+    if(v.charge.escompte !== undefined) c.escompte = v.charge.escompte;
+  }
+}
+function trancher(vid, ok){
+  const v = S.validations.find(x=>x.id===vid);
+  if(!v || v.statut !== 'EN_ATTENTE') return;
+  const commentaire = prompt(ok ? "Commentaire (facultatif) :" : "Motif du refus (obligatoire) :", '');
+  if(!ok && !commentaire){ toast("Refus annulé : un motif est obligatoire.", 'err'); return; }
+  v.statut = ok ? 'APPROUVEE' : 'REFUSEE';
+  v.decideur = U.nom; v.decideLe = new Date().toISOString(); v.commentaire = commentaire || '';
+  if(ok) appliquer(v);
+  const c = S.commandes.find(x=>x.id===v.commandeId);
+  tracer(ok ? 'Validation approuvée' : 'Validation refusée',
+         `${v.type} sur ${c?c.num:'?'} — ${commentaire||'sans commentaire'}`, v.commandeId);
+  sauver(); rendre();
+  toast(ok ? "Demande approuvée, la modification est appliquée." : "Demande refusée.", ok?'ok':'err');
+}
+
+/* =========================================================================
+   NAVIGATION
+   ========================================================================= */
+const UTILISATEURS = {
+  ADMIN:       { nom:'M. Bamba', role:'ADMIN' },
+  MANAGER:     { nom:'Konan', role:'MANAGER' },
+  PREPARATEUR: { nom:'Sery', role:'PREPARATEUR' }
+};
+const MENU = [
+  { cle:'tableau',     ic:'📊', txt:'Tableau de bord', roles:['ADMIN','MANAGER','PREPARATEUR'] },
+  { cle:'commandes',   ic:'🧾', txt:'Commandes',       roles:['ADMIN','MANAGER'] },
+  { cle:'catalogue',   ic:'📚', txt:'Catalogue',       roles:['ADMIN','MANAGER','PREPARATEUR'] },
+  { cle:'preparation', ic:'📦', txt:'Préparation',     roles:['ADMIN','PREPARATEUR'] },
+  { cle:'validations', ic:'🔐', txt:'Validations',     roles:['ADMIN','MANAGER'] },
+  { cle:'facturation', ic:'💰', txt:'Facturation',     roles:['ADMIN','MANAGER'] },
+  { cle:'journal',     ic:'🕓', txt:'Traçabilité',     roles:['ADMIN'] },
+  { cle:'demo',        ic:'🎬', txt:'Scénario démo',   roles:['ADMIN','MANAGER','PREPARATEUR'] }
+];
+
+function connexion(role){
+  U = UTILISATEURS[role];
+  $('#login').style.display = 'none';
+  $('#app').classList.add('on');
+  $('#qui-role').textContent = U.role;
+  $('#qui-nom').textContent  = U.nom;
+  const permis = MENU.filter(m=>m.roles.includes(U.role));
+  vueCourante = permis[0].cle;
+  tracer('Connexion', `${U.nom} — profil ${U.role}`);
+  sauver(); rendre();
+}
+function deconnexion(){
+  tracer('Déconnexion', U.nom);
+  sauver(); U = null; brouillon = null;
+  $('#app').classList.remove('on');
+  $('#login').style.display = 'flex';
+}
+function aller(cle){ vueCourante = cle; brouillon = null; rendre(); }
+
+function rendreMenu(){
+  const enAttente = S.validations.filter(v=>v.statut==='EN_ATTENTE').length;
+  const aPreparer = S.commandes.filter(c=>c.statut==='RESERVEE').length;
+  $('#nav').innerHTML = MENU.filter(m=>m.roles.includes(U.role)).map(m=>{
+    let p = '';
+    if(m.cle==='validations' && enAttente) p = `<span class="pastille">${enAttente}</span>`;
+    if(m.cle==='preparation' && aPreparer) p = `<span class="pastille">${aPreparer}</span>`;
+    return `<button class="${m.cle===vueCourante?'actif':''}" onclick="aller('${m.cle}')">
+              <span>${m.ic}</span><span>${m.txt}</span>${p}</button>`;
+  }).join('');
+}
+
+/* Barre du haut, visible seulement sur telephone. Le logo est repris de la
+   barre laterale pour ne pas embarquer une deuxieme fois l'image. */
+function rendreBarre(){
+  const src = document.querySelector('.marque img').getAttribute('src');
+  const logo = $('#barre-logo');
+  if(logo.getAttribute('src') !== src) logo.setAttribute('src', src);
+  const m = MENU.find(x=>x.cle===vueCourante);
+  $('#barre-vue').textContent = m ? m.txt : '';
+  $('#barre-compte').textContent = U ? U.nom : 'Compte';
+}
+function menuCompte(){
+  modale('Compte', `
+    <div class="puce-cat">Connecté en tant que</div>
+    <div style="font-size:18px;font-weight:700;margin:3px 0 2px">${esc(U.nom)}</div>
+    <div style="color:var(--txt2)">Profil ${esc(U.role)}</div>
+    <div class="ligne-sep"></div>
+    <button class="btn" style="width:100%;margin-bottom:9px"
+      onclick="fermerModale();deconnexion()">Changer d'utilisateur</button>
+    <button class="btn r" style="width:100%"
+      onclick="fermerModale();reinitialiser()">Réinitialiser la démo</button>
+  `, `<button class="btn" onclick="fermerModale()">Fermer</button>`);
+}
+
+function rendre(){
+  rendreMenu(); rendreBarre();
+  const f = { tableau:vueTableau, commandes:vueCommandes, catalogue:vueCatalogue,
+              preparation:vuePreparation, validations:vueValidations,
+              facturation:vueFacturation, journal:vueJournal, demo:vueDemo }[vueCourante];
+  $('#vue').innerHTML = f ? f() : '';
+  window.scrollTo(0,0);
+}
+
+/* =========================================================================
+   VUE — TABLEAU DE BORD
+   ========================================================================= */
+function vueTableau(){
+  const a = auj().toISOString().slice(0,10);
+  const sorties = S.commandes.filter(c=>c.debut===a && ['RESERVEE','PREPAREE','LIVREE'].includes(c.statut));
+  const retours = S.commandes.filter(c=>c.fin===a && c.statut==='LIVREE');
+  const retard  = S.commandes.filter(c=>c.fin < a && c.statut==='LIVREE');
+  const attente = S.validations.filter(v=>v.statut==='EN_ATTENTE');
+  const impayes = S.commandes.filter(c=>c.facture && reste(c) > 0);
+  const duCA    = S.commandes.filter(c=>!['DEVIS','ANNULEE'].includes(c.statut))
+                             .reduce((s,c)=>s+totalCommande(c).net,0);
+  const encaisseTotal = S.paiements.reduce((s,p)=>s+p.montant,0);
+
+  // Le preparateur travaille au depot : il n'a aucune raison de voir l'argent
+  // de la societe. Un seul drapeau commande tout l'affichage financier.
+  const argent = (U.role !== 'PREPARATEUR');
+
+  const prochaines = S.commandes
+    .filter(c=>['DEVIS','RESERVEE','PREPAREE','LIVREE'].includes(c.statut))
+    .filter(c=>argent || c.statut !== 'DEVIS')     // un devis n'est pas encore de la logistique
+    .sort((x,y)=>x.debut.localeCompare(y.debut)).slice(0,6);
+
+  const pieces = sorties.reduce((s,c)=>s+c.lignes.reduce((n,l)=>n+l.qte,0),0);
+
+  return `
+  <div class="entete">
+    <div><h2>Bonjour ${esc(U.nom)}</h2>
+      <div class="sous">${frDate(a)} — ${esc(S.societe.nom)}, ${esc(S.societe.ville)}</div></div>
+    ${U.role!=='PREPARATEUR' ? `<div class="droite">
+      <button class="btn p" onclick="nouvelleCommande()">+ Nouvelle commande</button></div>` : ''}
+  </div>
+
+  ${retard.length ? `<div class="alerte r"><b>⚠ ${retard.length} commande(s) en retard de retour.</b>
+      Du matériel est toujours dehors alors que la date de fin est passée :
+      ${retard.map(c=>esc(c.num)+' ('+esc(c.client)+')').join(', ')}.</div>` : ''}
+  ${attente.length && U.role==='ADMIN' ? `<div class="alerte">
+      <b>${attente.length} demande(s) attendent votre validation.</b>
+      <button class="btn mini" style="margin-left:8px" onclick="aller('validations')">Voir</button></div>` : ''}
+
+  <div class="grille stats" style="margin-bottom:18px">
+    <div class="carte stat cyan"><div class="lab">Sorties du jour</div>
+      <div class="val">${sorties.length}</div><div class="det">départs de matériel prévus</div></div>
+    <div class="carte stat orange"><div class="lab">Retours attendus</div>
+      <div class="val">${retours.length}</div>
+      <div class="det">${retard.length?`<span style="color:var(--rouge)">${retard.length} en retard</span>`:'aucun retard'}</div></div>
+    ${argent ? `
+    <div class="carte stat rose"><div class="lab">À valider</div>
+      <div class="val">${attente.length}</div><div class="det">demandes en attente ADMIN</div></div>
+    <div class="carte stat vert"><div class="lab">Chiffre d'affaires</div>
+      <div class="val" style="font-size:21px">${fcfa(duCA)}</div>
+      <div class="det">encaissé ${fcfa(encaisseTotal)}</div></div>
+    <div class="carte stat rouge"><div class="lab">Impayés</div>
+      <div class="val" style="font-size:21px">${fcfa(impayes.reduce((s,c)=>s+reste(c),0))}</div>
+      <div class="det">${impayes.length} facture(s) non soldée(s)</div></div>`
+    : `
+    <div class="carte stat rose"><div class="lab">Pièces à charger</div>
+      <div class="val">${pieces}</div><div class="det">sur les départs du jour</div></div>`}
+  </div>
+
+  <div class="carte">
+    <h3 style="font-size:15px;margin-bottom:14px">${argent?'Prochaines échéances':'Prochaines sorties'}</h3>
+    <div class="tbl-scroll">
+    <table><thead><tr>
+      <th>N°</th><th>Client</th><th>Période</th><th>Lieu</th>
+      ${argent?'<th class="num">Montant</th>':'<th class="num">Pièces</th>'}
+      <th>État</th><th></th></tr></thead><tbody>
+      ${prochaines.map(c=>{
+        const t = totalCommande(c);
+        return `<tr>
+          <td style="font-variant-numeric:tabular-nums">${esc(c.num)}</td>
+          <td><b>${esc(c.client)}</b></td>
+          <td>${frCourt(c.debut)} → ${frCourt(c.fin)} <span style="color:var(--txt3)">(${t.jours} j)</span></td>
+          <td style="color:var(--txt2)">${esc(c.lieu)}</td>
+          <td class="num">${argent ? fcfa(t.net) : c.lignes.reduce((n,l)=>n+l.qte,0)}</td>
+          <td><span class="et ${c.statut}">${c.statut}</span></td>
+          <td><button class="btn mini" onclick="ouvrirCommande('${c.id}')">Ouvrir</button></td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="7" class="vide">Aucune commande en cours</td></tr>'}
+    </tbody></table></div>
+  </div>`;
+}
+
+/* =========================================================================
+   VUE — CATALOGUE (disponibilite sur une periode)
+   ========================================================================= */
+let catD1 = null, catD2 = null, catFiltre = '';
+function vueCatalogue(){
+  catD1 = catD1 || jour(0); catD2 = catD2 || jour(2);
+  const cats = [...new Set(S.articles.map(a=>a.cat))];
+  const liste = S.articles.filter(a=>!catFiltre || a.cat===catFiltre);
+
+  const gere = (U.role === 'ADMIN');   // seul l'ADMIN touche au parc
+
+  return `
+  <div class="entete">
+    <div><h2>Catalogue</h2>
+      <div class="sous">${S.articles.length} références — la disponibilité se lit sur une période, pas sur un stock figé</div></div>
+    ${gere ? `<div class="droite">
+      <button class="btn" onclick="importerArticles()">Importer une liste</button>
+      <button class="btn p" onclick="formArticle()">+ Nouvel article</button></div>` : ''}
+  </div>
+
+  <div class="carte" style="margin-bottom:16px">
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
+      <div class="champ" style="margin:0"><label>Du</label>
+        <input type="date" value="${catD1}" onchange="catD1=this.value;rendre()"></div>
+      <div class="champ" style="margin:0"><label>Au</label>
+        <input type="date" value="${catD2}" onchange="catD2=this.value;rendre()"></div>
+      <div class="champ" style="margin:0;min-width:190px"><label>Catégorie</label>
+        <select onchange="catFiltre=this.value;rendre()">
+          <option value="">Toutes</option>
+          ${cats.map(c=>`<option ${catFiltre===c?'selected':''}>${esc(c)}</option>`).join('')}
+        </select></div>
+      <div style="color:var(--txt2);font-size:13px;padding-bottom:9px">
+        Période de <b>${nbJours(catD1,catD2)} jour(s)</b></div>
+    </div>
+  </div>
+
+  <div class="carte"><div class="tbl-scroll">
+    <table><thead><tr>
+      <th>Réf.</th><th>Désignation</th><th class="num">Parc</th>
+      <th class="num">Réservé</th><th class="num">Disponible</th>
+      <th class="num">Prix / jour</th><th style="width:130px">Charge</th>
+      ${gere?'<th style="width:96px"></th>':''}</tr></thead><tbody>
+      ${liste.map(a=>{
+        const r = reserve(a.id, catD1, catD2);
+        const d = a.qte - r;
+        const pc = a.qte ? Math.min(100, r/a.qte*100) : 0;
+        const cl = d<=0 ? 'dispo-non' : (d < a.qte*0.2 ? 'dispo-bas' : 'dispo-ok');
+        const coul = pc>=100 ? 'var(--rouge)' : pc>=80 ? 'var(--orange)' : 'var(--vert)';
+        return `<tr>
+          <td style="color:var(--txt3);font-variant-numeric:tabular-nums">${esc(a.ref)}</td>
+          <td><b>${esc(a.nom)}</b><div class="puce-cat">${esc(a.cat)}</div></td>
+          <td class="num">${a.qte}</td>
+          <td class="num" style="color:var(--txt2)">${r}</td>
+          <td class="num ${cl}">${d}</td>
+          <td class="num">${fcfa(a.prix)}</td>
+          <td><div class="jauge"><i style="width:${pc}%;background:${coul}"></i></div></td>
+          ${gere?`<td style="text-align:right;white-space:nowrap">
+            <button class="btn mini" title="Modifier" onclick="formArticle('${a.id}')">✎</button>
+            <button class="btn mini r" title="Supprimer" onclick="supprimerArticle('${a.id}')">✕</button></td>`:''}
+        </tr>`;
+      }).join('')}
+    </tbody></table></div>
+  </div>`;
+}
+
+/* ---------- Fiche article : creation et modification ---------- */
+function formArticle(id){
+  const a = id ? S.articles.find(x=>x.id===id) : null;
+  const cats = [...new Set(S.articles.map(x=>x.cat))];
+  modale(a ? `Modifier — ${esc(a.nom)}` : 'Nouvel article', `
+    <div class="paire">
+      <div class="champ"><label>Référence</label>
+        <input id="a-ref" value="${esc(a?a.ref:'')}" placeholder="SON-05" ${a?'disabled':''}>
+        ${a?'<div class="puce-cat" style="margin-top:5px">La référence ne se modifie pas : elle est citée sur les commandes déjà passées.</div>':''}</div>
+      <div class="champ"><label>Catégorie</label>
+        <input id="a-cat" value="${esc(a?a.cat:'')}" list="l-cats" placeholder="Sonorisation">
+        <datalist id="l-cats">${cats.map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div>
+    </div>
+    <div class="champ"><label>Désignation</label>
+      <input id="a-nom" value="${esc(a?a.nom:'')}" placeholder="Enceinte active 15\\" 800W"></div>
+    <div class="paire">
+      <div class="champ"><label>Quantité au parc</label>
+        <input id="a-qte" type="number" min="0" value="${a?a.qte:1}"></div>
+      <div class="champ"><label>Prix de location par jour (F CFA)</label>
+        <input id="a-prix" type="number" min="0" step="500" value="${a?a.prix:0}"></div>
+    </div>
+    <div class="champ"><label>Valeur de remplacement à neuf (F CFA)</label>
+      <input id="a-valeur" type="number" min="0" step="1000" value="${a?(a.valeur||0):0}">
+      <div class="puce-cat" style="margin-top:5px">Base de calcul des retenues sur caution
+        en cas de casse ou de matériel non restitué</div></div>
+    ${a?`<div class="alerte c">Déjà engagé sur des commandes en cours :
+      <b>${reserve(a.id, auj().toISOString().slice(0,10), jour(365))}</b> unité(s).
+      La quantité du parc ne peut pas descendre en dessous.</div>`:''}
+  `, `<button class="btn" onclick="fermerModale()">Annuler</button>
+      <button class="btn p" onclick="enregistrerArticle(${a?`'${a.id}'`:'null'})">Enregistrer</button>`);
+}
+
+function enregistrerArticle(id){
+  const ref  = $('#a-ref').value.trim().toUpperCase();
+  const nom  = $('#a-nom').value.trim();
+  const cat  = $('#a-cat').value.trim();
+  const qte  = parseInt($('#a-qte').value);
+  const prix = parseFloat($('#a-prix').value);
+  const valeur = parseFloat($('#a-valeur').value) || 0;
+
+  if(!ref || !nom || !cat){ toast("Référence, désignation et catégorie sont obligatoires.", 'err'); return; }
+  if(isNaN(qte) || qte < 0){ toast("Quantité invalide.", 'err'); return; }
+  if(isNaN(prix) || prix < 0){ toast("Prix invalide.", 'err'); return; }
+  if(valeur < 0){ toast("Valeur de remplacement invalide.", 'err'); return; }
+
+  if(id){
+    const a = S.articles.find(x=>x.id===id);
+    const engage = reserve(a.id, auj().toISOString().slice(0,10), jour(365));
+    if(qte < engage){
+      toast(`Impossible : ${engage} unité(s) sont déjà engagées sur des commandes en cours.`, 'err'); return;
+    }
+    const avant = `${a.qte} au parc à ${fcfa(a.prix)}/j`;
+    Object.assign(a, {nom, cat, qte, prix, valeur});
+    tracer('Modification article', `${a.ref} — ${avant} → ${qte} au parc à ${fcfa(prix)}/j`, a.id);
+    toast(`${a.ref} mis à jour.`, 'ok');
+  } else {
+    if(S.articles.some(x=>x.ref===ref)){ toast(`La référence ${ref} existe déjà.`, 'err'); return; }
+    S.articles.push({id:ref, ref, nom, cat, qte, prix, valeur, unite:'unité'});
+    tracer('Création article', `${ref} — ${nom} — ${qte} au parc à ${fcfa(prix)}/j`, ref);
+    toast(`${ref} ajouté au catalogue.`, 'ok');
+  }
+  sauver(); fermerModale(); rendre();
+}
+
+function supprimerArticle(id){
+  const a = S.articles.find(x=>x.id===id);
+  const cites = S.commandes.filter(c=>c.statut!=='ANNULEE' && c.lignes.some(l=>l.articleId===id));
+  if(cites.length){
+    toast(`${a.ref} figure sur ${cites.length} commande(s) : mettez sa quantité à 0 plutôt que de le supprimer.`, 'err');
+    return;
+  }
+  if(!confirm(`Supprimer définitivement « ${a.nom} » (${a.ref}) du catalogue ?`)) return;
+  S.articles = S.articles.filter(x=>x.id!==id);
+  tracer('Suppression article', `${a.ref} — ${a.nom}`, id);
+  sauver(); rendre(); toast(`${a.ref} supprimé.`, 'ok');
+}
+
+/* ---------- Import d'une liste complete (copier-coller depuis Excel) ---------- */
+function importerArticles(){
+  modale('Importer une liste d\'articles', `
+    <div class="alerte c">Collez vos lignes depuis Excel, ou tapez-les à la main.
+      <b>Une ligne par article</b>, colonnes séparées par un point-virgule ou une tabulation :
+      <div style="font-family:monospace;font-size:12.5px;margin-top:8px;color:var(--txt)">
+        Référence ; Désignation ; Catégorie ; Quantité ; Prix par jour ; Valeur à neuf</div>
+      La <b>valeur à neuf</b> est facultative — elle sert au calcul des retenues sur
+      caution. Une référence déjà connue est <b>mise à jour</b> au lieu d'être dupliquée.</div>
+    <div class="champ"><label>Lignes à importer</label>
+      <textarea id="imp" style="min-height:200px;font-family:monospace;font-size:12.5px"
+placeholder="SON-05 ; Enceinte colonne 1000W ; Sonorisation ; 6 ; 30000
+MOB-06 ; Table cocktail haute ; Mobilier ; 25 ; 5000"></textarea></div>
+  `, `<button class="btn" onclick="fermerModale()">Annuler</button>
+      <button class="btn p" onclick="lancerImport()">Importer</button>`);
+}
+
+function lancerImport(){
+  const lignes = $('#imp').value.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  if(!lignes.length){ toast("Rien à importer.", 'err'); return; }
+
+  let crees = 0, majs = 0;
+  const refus = [];
+
+  lignes.forEach((ligne, i) => {
+    if(/^\s*(réf|ref)/i.test(ligne)) return;                    // ligne d'en-tete
+    const col = ligne.split(/\t|;/).map(c=>c.trim());
+    if(col.length < 5){ refus.push(`ligne ${i+1} : ${col.length} colonne(s) au lieu de 5`); return; }
+
+    const [ref, nom, cat, qteBrute, prixBrut, valeurBrute] = col;
+    const qte  = parseInt(String(qteBrute).replace(/[^\d]/g,''));
+    const prix = parseFloat(String(prixBrut).replace(/[^\d]/g,''));
+    const valeur = valeurBrute === undefined ? 0
+                 : (parseFloat(String(valeurBrute).replace(/[^\d]/g,'')) || 0);
+
+    if(!ref || !nom || !cat){ refus.push(`ligne ${i+1} : référence, désignation ou catégorie vide`); return; }
+    if(isNaN(qte) || isNaN(prix)){ refus.push(`ligne ${i+1} : quantité ou prix illisible`); return; }
+
+    const R = ref.toUpperCase();
+    const ex = S.articles.find(x=>x.ref===R);
+    if(ex){
+      const engage = reserve(ex.id, auj().toISOString().slice(0,10), jour(365));
+      if(qte < engage){ refus.push(`ligne ${i+1} : ${R} — ${engage} unité(s) déjà engagées`); return; }
+      Object.assign(ex, {nom, cat, qte, prix});
+      if(valeur) ex.valeur = valeur;            // colonne absente = valeur conservée
+      majs++;
+    } else {
+      S.articles.push({id:R, ref:R, nom, cat, qte, prix, valeur, unite:'unité'}); crees++;
+    }
+  });
+
+  tracer('Import catalogue', `${crees} création(s), ${majs} mise(s) à jour, ${refus.length} refus`);
+  sauver(); fermerModale(); rendre();
+
+  if(refus.length){
+    modale('Import terminé', `
+      <div class="alerte v"><b>${crees} article(s) créé(s)</b> et <b>${majs} mis à jour</b>.</div>
+      <div class="alerte r"><b>${refus.length} ligne(s) ignorée(s)</b><br>
+        ${refus.map(esc).join('<br>')}</div>
+    `, `<button class="btn" onclick="fermerModale()">Fermer</button>`);
+  } else {
+    toast(`${crees} article(s) créé(s), ${majs} mis à jour.`, 'ok');
+  }
+}
+
+/* =========================================================================
+   VUE — COMMANDES
+   ========================================================================= */
+let filtreStatut = '';
+function vueCommandes(){
+  if(brouillon) return vueSaisie();
+  const liste = S.commandes.filter(c=>!filtreStatut || c.statut===filtreStatut)
+                           .slice().sort((a,b)=>b.debut.localeCompare(a.debut));
+  const statuts = ['DEVIS','RESERVEE','PREPAREE','LIVREE','RETOURNEE','FACTUREE','ANNULEE'];
+  return `
+  <div class="entete">
+    <div><h2>Commandes</h2><div class="sous">${S.commandes.length} dossiers de location</div></div>
+    <div class="droite">
+      <select class="btn" onchange="filtreStatut=this.value;rendre()" style="padding:8px 12px">
+        <option value="">Tous les états</option>
+        ${statuts.map(s=>`<option ${filtreStatut===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <button class="btn p" onclick="nouvelleCommande()">+ Nouvelle commande</button>
+    </div>
+  </div>
+  <div class="carte"><div class="tbl-scroll">
+    <table><thead><tr>
+      <th>N°</th><th>Client</th><th>Période</th><th class="num">Lignes</th>
+      <th class="num">Total</th><th class="num">Reste dû</th><th>État</th><th></th></tr></thead><tbody>
+      ${liste.map(c=>{
+        const t = totalCommande(c); const r = reste(c);
+        return `<tr>
+          <td style="font-variant-numeric:tabular-nums">${esc(c.num)}</td>
+          <td><b>${esc(c.client)}</b><div class="puce-cat">${esc(c.lieu)}</div></td>
+          <td>${frCourt(c.debut)} → ${frCourt(c.fin)}<div class="puce-cat">${t.jours} jour(s)</div></td>
+          <td class="num">${c.lignes.length}</td>
+          <td class="num">${fcfa(t.net)}${t.remise?`<div class="puce-cat" style="color:var(--orange)">−${fcfa(t.remise)}</div>`:''}</td>
+          <td class="num">${c.facture ? (r>0?`<span style="color:var(--rouge)">${fcfa(r)}</span>`:'<span style="color:var(--vert)">soldé</span>') : '—'}</td>
+          <td><span class="et ${c.statut}">${c.statut}</span></td>
+          <td><button class="btn mini" onclick="ouvrirCommande('${c.id}')">Ouvrir</button></td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="8" class="vide">Aucune commande</td></tr>'}
+    </tbody></table></div>
+  </div>`;
+}
+
+/* ---------- Saisie d'une commande ---------- */
+function nouvelleCommande(){
+  brouillon = { etape:1, client:'', tel:'', lieu:'', debut:jour(3), fin:jour(4), lignes:[],
+                remise:0, escompte:0, caution:0, acompte:0, encaisserAcompte:true,
+                tva:S.societe.tva };
+  vueCourante = 'commandes'; rendre();
+}
+function etape(n){
+  if(n === 2){
+    if(!brouillon.client.trim()){ toast("Le nom du client est obligatoire.", 'err'); return; }
+    if(!brouillon.lignes.length){ toast("Ajoutez au moins un article.", 'err'); return; }
+  }
+  brouillon.etape = n; rendre();
+}
+function majBrouillon(champ, val){
+  brouillon[champ] = val;
+  if(champ==='debut' && brouillon.fin < val) brouillon.fin = val;
+  rendre();
+}
+function ajouterLigne(articleId){
+  if(!articleId) return;
+  const a = S.articles.find(x=>x.id===articleId);
+  const ex = brouillon.lignes.find(l=>l.articleId===articleId);
+  const d = dispo(articleId, brouillon.debut, brouillon.fin);
+  if(ex){
+    if(ex.qte + 1 > d){ toast(`Stock insuffisant : ${d} disponible(s) sur cette période.`, 'err'); return; }
+    ex.qte++;
+  } else {
+    if(d < 1){ toast(`${a.nom} : aucune disponibilité sur cette période.`, 'err'); return; }
+    brouillon.lignes.push({articleId, ref:a.ref, nom:a.nom, qte:1, prix:a.prix, remise:0});
+  }
+  rendre();
+}
+function qteLigne(articleId, q){
+  const l = brouillon.lignes.find(x=>x.articleId===articleId);
+  const d = dispo(articleId, brouillon.debut, brouillon.fin);
+  q = Math.max(1, parseInt(q)||1);
+  if(q > d){ toast(`Maximum ${d} sur cette période.`, 'err'); q = d; }
+  l.qte = q; rendre();
+}
+function retirerLigneBrouillon(articleId){
+  // Sur un brouillon jamais enregistre, aucune validation n'est requise :
+  // rien n'a encore ete promis au client.
+  brouillon.lignes = brouillon.lignes.filter(l=>l.articleId!==articleId); rendre();
+}
+function enregistrerBrouillon(statut){
+  if(!brouillon.client.trim()){ toast("Le nom du client est obligatoire.", 'err'); return; }
+  if(!brouillon.lignes.length){ toast("Ajoutez au moins un article.", 'err'); return; }
+  for(const l of brouillon.lignes){
+    const d = dispo(l.articleId, brouillon.debut, brouillon.fin);
+    if(l.qte > d){ toast(`${l.nom} : plus que ${d} disponible(s).`, 'err'); return; }
+  }
+
+  // Une réduction supérieure au seuil ne s'applique pas d'office à la création :
+  // sinon il suffirait de créer la commande remisée pour contourner l'ADMIN.
+  const demande = reductionTotale(brouillon);
+  const aValider = (U.role !== 'ADMIN') && demande > SEUIL_REMISE;
+  let motif = '';
+  if(aValider){
+    motif = prompt(`Réduction demandée : ${brouillon.remise} % de remise + ${brouillon.escompte} % d'escompte, soit ${demande} %.\n\nAu-delà de ${SEUIL_REMISE} %, l'ADMIN doit valider.\nLa commande sera enregistrée au tarif plein en attendant.\n\nMotif obligatoire :`, '');
+    if(!motif){ toast("Enregistrement abandonné : le motif est obligatoire.", 'err'); return; }
+  }
+
+  S.compteur.cmd++;
+  const c = Object.assign({}, brouillon, {
+    id: uid('C'), num:'CMD-2026-'+String(S.compteur.cmd).padStart(3,'0'),
+    statut, creeeLe:new Date().toISOString(), creeePar:U.nom, facture:null, retour:null
+  });
+  delete c.etape; delete c.encaisserAcompte;
+  const remiseVoulue = c.remise, escompteVoulu = c.escompte;
+  if(aValider){ c.remise = 0; c.escompte = 0; }
+
+  S.commandes.push(c);
+  tracer('Création commande', `${c.num} — ${c.client} — ${fcfa(totalCommande(c).net)}`, c.id);
+
+  if(aValider){
+    demanderValidation(c.id, 'REMISE', motif, {remise:remiseVoulue, escompte:escompteVoulu});
+  }
+
+  // L'acompte convenu, s'il est encaissé séance tenante, devient un règlement.
+  if(brouillon.encaisserAcompte && brouillon.acompte > 0 && statut !== 'DEVIS'){
+    S.paiements.push({ id:uid('P'), commandeId:c.id, montant:brouillon.acompte,
+                       mode:'Acompte à la réservation', le:auj().toISOString().slice(0,10), par:U.nom });
+    tracer('Encaissement', `Acompte de ${fcfa(brouillon.acompte)} sur ${c.num}`, c.id);
+  }
+
+  brouillon = null; sauver(); rendre();
+  toast(aValider
+    ? `${c.num} enregistrée au tarif plein — la réduction attend l'ADMIN.`
+    : `${c.num} enregistrée (${statut.toLowerCase()}).`, 'ok');
+}
+
+/* Fil d'Ariane des deux étapes de saisie. */
+function ruban(n){
+  const et = [[1,'Matériel'],[2,'Facturation']];
+  return `<div class="ruban">${et.map(([i,txt])=>`
+    <div class="ruban-e ${i===n?'actif':''} ${i<n?'fait':''}">
+      <span class="ruban-n">${i<n?'✓':i}</span>${txt}</div>`).join('<div class="ruban-t"></div>')}</div>`;
+}
+
+function vueSaisie(){
+  return brouillon.etape === 2 ? vueSaisie2() : vueSaisie1();
+}
+
+function vueSaisie1(){
+  const b = brouillon;
+  const t = totalCommande(b);
+  const cats = [...new Set(S.articles.map(a=>a.cat))];
+  return `
+  <div class="entete">
+    <div><h2>Nouvelle commande</h2>
+      <div class="sous">La disponibilité est vérifiée en direct sur la période choisie</div></div>
+    <div class="droite"><button class="btn" onclick="brouillon=null;rendre()">Abandonner</button></div>
+  </div>
+  ${ruban(1)}
+
+  <div class="grille deux-col">
+    <div>
+      <div class="carte" style="margin-bottom:16px">
+        <h3 style="font-size:15px;margin-bottom:14px">Client et période</h3>
+        <div class="paire">
+          <div class="champ"><label>Client</label>
+            <input value="${esc(b.client)}" placeholder="Nom du client ou de l'événement"
+              onchange="majBrouillon('client',this.value)"></div>
+          <div class="champ"><label>Téléphone</label>
+            <input value="${esc(b.tel)}" placeholder="07 00 00 00 00"
+              onchange="majBrouillon('tel',this.value)"></div>
+        </div>
+        <div class="champ"><label>Lieu de l'événement</label>
+          <input value="${esc(b.lieu)}" placeholder="Quartier, salle…"
+            onchange="majBrouillon('lieu',this.value)"></div>
+        <div class="paire">
+          <div class="champ"><label>Début</label>
+            <input type="date" value="${b.debut}" onchange="majBrouillon('debut',this.value)"></div>
+          <div class="champ"><label>Fin</label>
+            <input type="date" value="${b.fin}" min="${b.debut}" onchange="majBrouillon('fin',this.value)"></div>
+        </div>
+        <div style="color:var(--txt2);font-size:13px">Durée facturée : <b>${t.jours} jour(s)</b></div>
+      </div>
+
+      <div class="carte">
+        <h3 style="font-size:15px;margin-bottom:14px">Matériel</h3>
+        <div class="champ">
+          <label>Ajouter un article</label>
+          <select onchange="ajouterLigne(this.value);this.value=''">
+            <option value="">— choisir —</option>
+            ${cats.map(cat=>`<optgroup label="${esc(cat)}">
+              ${S.articles.filter(a=>a.cat===cat).map(a=>{
+                const d = dispo(a.id, b.debut, b.fin);
+                return `<option value="${a.id}" ${d<1?'disabled':''}>${esc(a.nom)} — ${fcfa(a.prix)}/j (${d} dispo)</option>`;
+              }).join('')}</optgroup>`).join('')}
+          </select>
+        </div>
+        <div class="tbl-scroll">
+        <table><thead><tr><th>Article</th><th style="width:110px">Qté</th>
+          <th class="num">P.U./jour</th><th class="num">Total</th><th></th></tr></thead><tbody>
+          ${b.lignes.map(l=>{
+            const d = dispo(l.articleId, b.debut, b.fin);
+            return `<tr>
+              <td><b>${esc(l.nom)}</b><div class="puce-cat">${esc(l.ref)} — ${d} dispo.</div></td>
+              <td><input type="number" min="1" max="${d}" value="${l.qte}" style="width:88px;padding:6px 9px;
+                    background:#0a0a16;border:1px solid var(--bord);border-radius:6px"
+                    onchange="qteLigne('${l.articleId}',this.value)"></td>
+              <td class="num">${fcfa(l.prix)}</td>
+              <td class="num">${fcfa(l.qte*l.prix*t.jours)}</td>
+              <td><button class="btn mini r" onclick="retirerLigneBrouillon('${l.articleId}')">✕</button></td>
+            </tr>`;
+          }).join('') || '<tr><td colspan="5" class="vide">Aucun article — utilisez la liste ci-dessus</td></tr>'}
+        </tbody></table></div>
+      </div>
+    </div>
+
+    <div class="carte" style="position:sticky;top:20px">
+      <h3 style="font-size:15px;margin-bottom:14px">Récapitulatif</h3>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;color:var(--txt2)">
+        <span>Articles</span><b style="color:var(--txt)">${b.lignes.length}</b></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;color:var(--txt2)">
+        <span>Durée</span><b style="color:var(--txt)">${t.jours} jour(s)</b></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;color:var(--txt2)">
+        <span>Pièces</span><b style="color:var(--txt)">${b.lignes.reduce((s,l)=>s+l.qte,0)}</b></div>
+      <div class="ligne-sep"></div>
+      <div style="display:flex;justify-content:space-between;font-size:19px;font-weight:700">
+        <span>Total brut HT</span><span style="color:var(--rose-clair)">${fcfa(t.brut)}</span></div>
+      <div class="ligne-sep"></div>
+      <button class="btn p" style="width:100%" onclick="etape(2)">Suivant — Facturation →</button>
+      <div class="alerte c" style="margin:16px 0 0">
+        L'étape suivante fixe la <b>remise</b>, l'<b>escompte</b>, l'<b>acompte</b>
+        et la <b>caution</b>, puis affiche la facture avant enregistrement.
+      </div>
+    </div>
+  </div>`;
+}
+
+/* =========================================================================
+   ÉTAPE 2 — conditions financières et aperçu de la facture
+   ========================================================================= */
+function majFinance(champ, val){
+  const n = parseFloat(String(val).replace(',','.')) || 0;
+  brouillon[champ] = Math.max(0, n);
+  if(champ === 'remise' || champ === 'escompte') brouillon[champ] = Math.min(100, brouillon[champ]);
+  rendre();
+}
+function acomptePct(p){
+  const t = totalCommande(brouillon);
+  brouillon.acompte = Math.round(t.ttc * p / 100);
+  rendre();
+}
+
+function vueSaisie2(){
+  const b = brouillon;
+  const t = totalCommande(b);
+  const red = reductionTotale(b);
+  const depasse = red > SEUIL_REMISE;
+  const resteApres = Math.max(0, t.aEncaisser - (b.acompte||0));
+
+  return `
+  <div class="entete">
+    <div><h2>Conditions de facturation</h2>
+      <div class="sous">${esc(b.client)} — ${frDate(b.debut)} → ${frDate(b.fin)} (${t.jours} j)</div></div>
+    <div class="droite"><button class="btn" onclick="brouillon=null;rendre()">Abandonner</button></div>
+  </div>
+  ${ruban(2)}
+
+  <div class="grille deux-col">
+    <div>
+      <div class="carte" style="margin-bottom:16px">
+        <h3 style="font-size:15px;margin-bottom:14px">Réductions accordées</h3>
+        <div class="paire">
+          <div class="champ"><label>Remise commerciale (%)</label>
+            <input type="number" min="0" max="100" step="0.5" value="${b.remise}"
+              onchange="majFinance('remise',this.value)">
+            <div class="puce-cat" style="margin-top:5px">Geste sur le prix de location</div></div>
+          <div class="champ"><label>Escompte (%)</label>
+            <input type="number" min="0" max="100" step="0.5" value="${b.escompte}"
+              onchange="majFinance('escompte',this.value)">
+            <div class="puce-cat" style="margin-top:5px">Geste pour paiement anticipé</div></div>
+        </div>
+        ${depasse ? `<div class="alerte r" style="margin-bottom:0">
+          <b>Réduction totale : ${red} %</b> — au-delà du seuil de ${SEUIL_REMISE} %.
+          ${U.role==='ADMIN'
+            ? "En tant qu'ADMIN, elle s'appliquera directement."
+            : "La commande sera enregistrée <b>au tarif plein</b> et la réduction partira en validation ADMIN, avec un motif obligatoire."}
+          </div>` : (red>0 ? `<div class="alerte v" style="margin-bottom:0">
+            Réduction totale de ${red} %, sous le seuil de ${SEUIL_REMISE} % : applicable sans validation.
+          </div>` : '')}
+      </div>
+
+      <div class="carte" style="margin-bottom:16px">
+        <h3 style="font-size:15px;margin-bottom:14px">Encaissement</h3>
+        <div class="champ"><label>Acompte à la réservation (F CFA)</label>
+          <input type="number" min="0" step="5000" value="${b.acompte}"
+            onchange="majFinance('acompte',this.value)">
+          <div style="display:flex;gap:7px;margin-top:9px;flex-wrap:wrap">
+            ${[30,50,70,100].map(p=>`<button class="btn mini" onclick="acomptePct(${p})">${p} % du TTC</button>`).join('')}
+            <button class="btn mini" onclick="majFinance('acompte',0)">Aucun</button>
+          </div></div>
+        <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer;
+          color:var(--txt2);font-size:13px;line-height:1.5">
+          <input type="checkbox" ${b.encaisserAcompte?'checked':''} style="width:auto;margin-top:2px"
+            onchange="brouillon.encaisserAcompte=this.checked;rendre()">
+          <span>L'acompte est <b>encaissé maintenant</b> — il sera enregistré comme règlement
+            et déduit du reste dû. Décochez si le client paiera plus tard.</span></label>
+      </div>
+
+      <div class="carte">
+        <h3 style="font-size:15px;margin-bottom:14px">Caution et taxe</h3>
+        <div class="paire">
+          <div class="champ"><label>Caution consignée (F CFA)</label>
+            <input type="number" min="0" step="5000" value="${b.caution}"
+              onchange="majFinance('caution',this.value)">
+            <div class="puce-cat" style="margin-top:5px">Remboursable au retour, hors TVA et hors chiffre d'affaires</div></div>
+          <div class="champ"><label>TVA (%)</label>
+            <input type="number" min="0" max="100" step="0.5" value="${b.tva}"
+              onchange="majFinance('tva',this.value)">
+            <div class="puce-cat" style="margin-top:5px">18 % en Côte d'Ivoire</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="carte" style="position:sticky;top:20px">
+      <h3 style="font-size:15px;margin-bottom:14px">Aperçu de la facture</h3>
+      ${cascade(t, b.acompte||0)}
+      <div class="ligne-sep"></div>
+      <div style="display:flex;justify-content:space-between;font-size:19px;font-weight:700;margin-bottom:14px">
+        <span>Net à payer</span><span style="color:var(--rose-clair)">${fcfa(resteApres)}</span></div>
+      <button class="btn" style="width:100%;margin-bottom:9px" onclick="etape(1)">← Retour au matériel</button>
+      <button class="btn p" style="width:100%;margin-bottom:9px"
+        onclick="enregistrerBrouillon('RESERVEE')">Réserver et facturer</button>
+      <button class="btn" style="width:100%"
+        onclick="enregistrerBrouillon('DEVIS')">Enregistrer en devis</button>
+      <div class="alerte c" style="margin:16px 0 0">
+        Un <b>devis</b> ne bloque ni le stock ni l'acompte. Une <b>réservation</b>
+        retire le matériel de la disponibilité sur ces dates.
+      </div>
+    </div>
+  </div>`;
+}
+
+/* Cascade de calcul, réutilisée par l'aperçu, la fiche commande et la facture. */
+function cascade(t, dejaRegle, arbitre){
+  const l = (lab, val, style) => `<div style="display:flex;justify-content:space-between;
+    margin-bottom:6px;${style||''}"><span>${lab}</span><span>${val}</span></div>`;
+  return `
+    ${l('Total brut HT', fcfa(t.brut), 'color:var(--txt2)')}
+    ${t.remise ? l(`Remise ${t.tauxRemise} %`, '− '+fcfa(t.remise), 'color:var(--orange)') : ''}
+    ${t.remise ? l('Net commercial HT', fcfa(t.netCom), 'color:var(--txt2)') : ''}
+    ${t.escompte ? l(`Escompte ${t.tauxEscompte} %`, '− '+fcfa(t.escompte), 'color:var(--orange)') : ''}
+    ${t.escompte ? l('Net financier HT', fcfa(t.netFin), 'color:var(--txt2)') : ''}
+    ${l(`TVA ${t.tauxTva} %`, fcfa(t.tva), 'color:var(--txt2)')}
+    ${l('Total TTC', fcfa(t.ttc), 'font-weight:700')}
+    ${t.retenue ? l('Retenue casse et manquants', fcfa(t.retenue), 'color:var(--rouge)') : ''}
+    ${t.caution && !arbitre ? l('Caution consignée', fcfa(t.caution), 'color:var(--cyan)') : ''}
+    ${l(arbitre ? 'Total dû' : (t.caution ? 'Total à encaisser' : 'Total'),
+        fcfa(arbitre ? t.duFinal : t.aEncaisser), 'font-weight:700')}
+    ${dejaRegle ? l('Déjà réglé', '− '+fcfa(dejaRegle), 'color:var(--vert)') : ''}`;
+}
+
+/* ---------- Fiche commande (modale) ---------- */
+function ouvrirCommande(id){
+  const c = S.commandes.find(x=>x.id===id);
+  const t = totalCommande(c);
+  const enc = encaisse(c.id), r = reste(c);
+  const dem = S.validations.filter(v=>v.commandeId===c.id);
+  const peutModifier = !['ANNULEE','FACTUREE','SOLDEE'].includes(c.statut);
+  const argent = (U.role !== 'PREPARATEUR');   // pas de montants pour le dépôt
+
+  modale(`Commande ${esc(c.num)}`, `
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+      <span class="et ${c.statut}">${c.statut}</span>
+      <span style="color:var(--txt2)">créée par ${esc(c.creeePar)}</span>
+    </div>
+    <div class="paire" style="margin-bottom:6px">
+      <div><div class="puce-cat">Client</div><b>${esc(c.client)}</b><br>
+        <span style="color:var(--txt2)">${esc(c.tel||'—')}</span></div>
+      <div><div class="puce-cat">Période</div><b>${frDate(c.debut)} → ${frDate(c.fin)}</b><br>
+        <span style="color:var(--txt2)">${t.jours} jour(s) — ${esc(c.lieu||'lieu non précisé')}</span></div>
+    </div>
+    <div class="ligne-sep"></div>
+    <table><thead><tr><th>Article</th><th class="num">Qté</th>
+      ${argent ? '<th class="num">P.U./j</th><th class="num">Total</th>' : ''}
+      ${peutModifier && argent ? '<th></th>' : ''}</tr></thead><tbody>
+      ${c.lignes.map(l=>{
+        const brut = l.qte*l.prix*t.jours;
+        return `<tr>
+          <td>${esc(l.nom)}<div class="puce-cat">${esc(l.ref)}</div></td>
+          <td class="num">${l.qte}</td>
+          ${argent ? `<td class="num">${fcfa(l.prix)}</td>
+          <td class="num">${fcfa(brut*(1-(l.remise||0)/100))}
+            ${l.remise?`<div class="puce-cat" style="color:var(--orange)">remise ${l.remise}%</div>`:''}</td>` : ''}
+          ${peutModifier && argent
+            ? `<td><button class="btn mini r" title="Retirer cet article"
+                 onclick="demanderRetrait('${c.id}','${l.articleId}')">✕</button></td>` : ''}
+        </tr>`;
+      }).join('')}
+    </tbody></table>
+    <div class="ligne-sep"></div>
+    ${argent ? `
+    ${cascade(t, enc, c.retenuesFaites)}
+    ${aRestituer(c) > 0
+      ? `<div style="display:flex;justify-content:space-between;font-size:18px;font-weight:700;color:var(--cyan)">
+           <span>À restituer au client</span><span>${fcfa(aRestituer(c))}</span></div>`
+      : `<div style="display:flex;justify-content:space-between;font-size:18px;font-weight:700;
+           color:${r>0?'var(--rose-clair)':'var(--vert)'}">
+           <span>${r>0?'Reste à payer':'Soldé'}</span><span>${fcfa(r)}</span></div>`}
+    ${c.facture?`<div class="puce-cat" style="margin-top:7px">Facture ${esc(c.facture.num)} du ${frDate(c.facture.le)}</div>`:''}`
+    : `<div style="display:flex;justify-content:space-between;font-size:17px;font-weight:700">
+        <span>Total à charger</span>
+        <span style="color:var(--cyan)">${c.lignes.reduce((n,l)=>n+l.qte,0)} pièces</span></div>`}
+
+    ${c.retour?`<div class="ligne-sep"></div><div class="alerte">
+      <b>Retour du ${frDate(c.retour.le)}</b><br>
+      ${c.retour.casse.map(x=>`Casse : ${x.qte} × ${esc(x.ref)} — ${esc(x.note)}`).join('<br>')||''}
+      ${c.retour.manquant.map(x=>`<br>Manquant : ${x.qte} × ${esc(x.ref)} — ${esc(x.note)}`).join('')||''}
+    </div>`:''}
+
+    ${dem.length && argent?`<div class="ligne-sep"></div>
+      <div class="puce-cat" style="margin-bottom:8px">Demandes de validation</div>
+      ${dem.map(v=>`<div style="display:flex;gap:9px;align-items:flex-start;margin-bottom:8px;font-size:13px">
+        <span class="et ${v.statut}">${v.statut.replace('_',' ')}</span>
+        <div><b>${v.type}</b> — ${esc(v.motif)}
+          <div class="puce-cat">par ${esc(v.demandeur)}${v.decideur?` · tranché par ${esc(v.decideur)}`:''}</div>
+        </div></div>`).join('')}`:''}
+  `, boutonsCommande(c, peutModifier));
+}
+
+function boutonsCommande(c, peutModifier){
+  const b = [];
+  if(U.role !== 'PREPARATEUR')
+    b.push(`<button class="btn" onclick="voirFacture('${c.id}')">${c.facture?'Voir la facture':'Voir la proforma'}</button>`);
+  if(peutModifier && U.role !== 'PREPARATEUR'){
+    b.push(`<button class="btn" onclick="demanderRemise('${c.id}')">Remise / escompte</button>`);
+    b.push(`<button class="btn r" onclick="demanderAnnulation('${c.id}')">Annuler la commande</button>`);
+  }
+  if(c.statut==='DEVIS' && U.role!=='PREPARATEUR')
+    b.push(`<button class="btn c" onclick="passerA('${c.id}','RESERVEE')">Confirmer la réservation</button>`);
+  if(c.statut==='RETOURNEE' && U.role!=='PREPARATEUR')
+    b.push(`<button class="btn p" onclick="facturer('${c.id}')">Facturer</button>`);
+  if(c.facture && reste(c)>0 && U.role!=='PREPARATEUR')
+    b.push(`<button class="btn p" onclick="encaisser('${c.id}')">Encaisser</button>`);
+  if(aRestituer(c)>0 && U.role!=='PREPARATEUR')
+    b.push(`<button class="btn c" onclick="restituerCaution('${c.id}')">Restituer ${fcfa(aRestituer(c))}</button>`);
+  b.push(`<button class="btn" onclick="fermerModale()">Fermer</button>`);
+  return b.join('');
+}
+
+function passerA(id, statut){
+  const c = S.commandes.find(x=>x.id===id);
+  if(statut==='RESERVEE'){
+    for(const l of c.lignes){
+      const d = dispo(l.articleId, c.debut, c.fin, c.id);
+      if(l.qte > d){ toast(`${l.nom} : plus que ${d} disponible(s) sur ces dates.`, 'err'); return; }
+    }
+  }
+  const avant = c.statut; c.statut = statut;
+  tracer('Changement d\'état', `${c.num} : ${avant} → ${statut}`, c.id);
+  sauver(); fermerModale(); rendre();
+  toast(`${c.num} : ${statut.toLowerCase()}.`, 'ok');
+}
+
+/* ---------- Les trois actions sous controle ADMIN ---------- */
+function demanderRetrait(cmdId, articleId){
+  const c = S.commandes.find(x=>x.id===cmdId);
+  const l = c.lignes.find(x=>x.articleId===articleId);
+  if(c.lignes.length<=1){ toast("Une commande doit garder au moins un article. Annulez-la plutôt.", 'err'); return; }
+  if(!exigeValidation('RETRAIT')){
+    c.lignes = c.lignes.filter(x=>x.articleId!==articleId);
+    tracer('Retrait d\'article', `${c.num} : ${l.nom} retiré directement (ADMIN)`, c.id);
+    sauver(); fermerModale(); rendre();
+    toast(`${l.nom} retiré.`, 'ok'); return;
+  }
+  const motif = prompt(`Retirer « ${l.nom} » de ${c.num}.\n\nCette action doit être validée par l'ADMIN.\nMotif obligatoire :`, '');
+  if(!motif){ toast("Retrait abandonné : le motif est obligatoire.", 'err'); return; }
+  demanderValidation(cmdId, 'RETRAIT', motif, {articleId, nom:l.nom});
+  fermerModale(); rendre();
+  toast("Demande transmise à l'ADMIN. L'article reste sur la commande en attendant.", 'ok');
+}
+
+function demanderRemise(cmdId){
+  const c = S.commandes.find(x=>x.id===cmdId);
+  const sr = prompt(`Remise commerciale sur ${c.num} (en %) :`, String(c.remise||0));
+  if(sr===null) return;
+  const se = prompt(`Escompte pour paiement anticipé sur ${c.num} (en %) :`, String(c.escompte||0));
+  if(se===null) return;
+  const remise = parseFloat(String(sr).replace(',','.')), escompte = parseFloat(String(se).replace(',','.'));
+  if(isNaN(remise)||isNaN(escompte)||remise<0||escompte<0||remise>100||escompte>100){
+    toast("Pourcentage invalide.", 'err'); return; }
+  const total = remise + escompte;
+
+  if(!exigeValidation('REMISE', total)){
+    c.remise = remise; c.escompte = escompte;
+    tracer('Réduction appliquée',
+      `${c.num} : remise ${remise}% + escompte ${escompte}%${U.role==='ADMIN'?' (ADMIN)':' (sous le seuil)'}`, c.id);
+    sauver(); fermerModale(); rendre();
+    toast(`Réduction de ${total}% appliquée.`, 'ok'); return;
+  }
+  const motif = prompt(`Réduction totale de ${total} % (remise ${remise} % + escompte ${escompte} %).\nElle dépasse le seuil de ${SEUIL_REMISE} % et doit être validée par l'ADMIN.\n\nMotif obligatoire :`, '');
+  if(!motif){ toast("Réduction abandonnée : le motif est obligatoire.", 'err'); return; }
+  demanderValidation(cmdId, 'REMISE', motif, {remise, escompte});
+  fermerModale(); rendre();
+  toast(`Demande de réduction ${total}% transmise à l'ADMIN.`, 'ok');
+}
+
+function demanderAnnulation(cmdId){
+  const c = S.commandes.find(x=>x.id===cmdId);
+  if(!exigeValidation('ANNULATION')){
+    if(!confirm(`Annuler définitivement ${c.num} ?`)) return;
+    c.statut = 'ANNULEE';
+    tracer('Annulation', `${c.num} annulée directement (ADMIN)`, c.id);
+    sauver(); fermerModale(); rendre();
+    toast(`${c.num} annulée.`, 'ok'); return;
+  }
+  const motif = prompt(`Annuler ${c.num} (${c.client}).\n\nCette action doit être validée par l'ADMIN.\nMotif obligatoire :`, '');
+  if(!motif){ toast("Annulation abandonnée : le motif est obligatoire.", 'err'); return; }
+  demanderValidation(cmdId, 'ANNULATION', motif, {});
+  fermerModale(); rendre();
+  toast("Demande d'annulation transmise à l'ADMIN.", 'ok');
+}
+
+/* =========================================================================
+   VUE — PREPARATION / LOGISTIQUE
+   ========================================================================= */
+function vuePreparation(){
+  const aPreparer = S.commandes.filter(c=>c.statut==='RESERVEE');
+  const aLivrer   = S.commandes.filter(c=>c.statut==='PREPAREE');
+  const dehors    = S.commandes.filter(c=>c.statut==='LIVREE');
+  const a = auj().toISOString().slice(0,10);
+
+  // Des fiches, pas un tableau : cet ecran se lit sur un telephone, au depot.
+  const bloc = (titre, liste, action, libelle, couleur) => `
+    <div class="carte" style="margin-bottom:16px">
+      <h3 style="font-size:15px;margin-bottom:12px">${titre}
+        <span style="color:var(--txt3);font-weight:400">(${liste.length})</span></h3>
+      ${liste.map(c=>{
+        const retard = c.fin < a && c.statut==='LIVREE';
+        return `<div class="job">
+          <div class="job-tete">
+            <span class="job-num">${esc(c.num)}</span>
+            ${retard?'<span class="et ANNULEE">EN RETARD</span>':''}
+            <span class="job-qte">${c.lignes.reduce((s,l)=>s+l.qte,0)} pièces</span>
+          </div>
+          <div class="job-client">${esc(c.client)}</div>
+          <div class="job-info">📍 ${esc(c.lieu||'lieu non précisé')}</div>
+          <div class="job-info">📅 ${frDate(c.debut)} → ${frDate(c.fin)}</div>
+          <div class="job-actions">
+            <button class="btn mini" onclick="ouvrirCommande('${c.id}')">Détail</button>
+            <button class="btn mini ${couleur}" onclick="${action}('${c.id}')">${libelle}</button>
+          </div>
+        </div>`;
+      }).join('') || '<div class="vide" style="padding:22px">Rien à traiter</div>'}
+    </div>`;
+
+  return `
+  <div class="entete">
+    <div><h2>Préparation & logistique</h2>
+      <div class="sous">Bons de sortie, départs et contrôle des retours</div></div>
+  </div>
+  ${bloc('📋 À préparer au dépôt', aPreparer, 'marquerPrepare', 'Matériel sorti', 'c')}
+  ${bloc('🚚 Prêt à partir', aLivrer, 'marquerLivre', 'Confirmer le départ', 'p')}
+  ${bloc('⏳ Matériel dehors', dehors, 'saisirRetour', 'Saisir le retour', 'v')}`;
+}
+
+function marquerPrepare(id){
+  const c = S.commandes.find(x=>x.id===id);
+  c.statut = 'PREPAREE';
+  tracer('Préparation', `${c.num} : matériel sorti du dépôt`, c.id);
+  sauver(); rendre(); toast(`${c.num} préparée.`, 'ok');
+}
+function marquerLivre(id){
+  const c = S.commandes.find(x=>x.id===id);
+  c.statut = 'LIVREE';
+  tracer('Départ', `${c.num} : matériel parti sur site`, c.id);
+  sauver(); rendre(); toast(`${c.num} livrée.`, 'ok');
+}
+
+function saisirRetour(id){
+  const c = S.commandes.find(x=>x.id===id);
+  modale(`Retour — ${esc(c.num)}`, `
+    <div class="alerte c">Contrôlez chaque ligne. Le matériel cassé ou non restitué
+      sera reporté sur la facture.</div>
+    <table><thead><tr><th>Article</th><th class="num">Sorti</th>
+      <th style="width:92px">Cassé</th><th style="width:92px">Manquant</th></tr></thead><tbody>
+      ${c.lignes.map((l,i)=>`<tr>
+        <td>${esc(l.nom)}<div class="puce-cat">${esc(l.ref)}</div></td>
+        <td class="num">${l.qte}</td>
+        <td><input id="k${i}" type="number" min="0" max="${l.qte}" value="0"
+          style="width:74px;padding:6px 8px;background:#0a0a16;border:1px solid var(--bord);border-radius:6px"></td>
+        <td><input id="m${i}" type="number" min="0" max="${l.qte}" value="0"
+          style="width:74px;padding:6px 8px;background:#0a0a16;border:1px solid var(--bord);border-radius:6px"></td>
+      </tr>`).join('')}
+    </tbody></table>
+    <div class="champ" style="margin-top:16px"><label>Observations</label>
+      <textarea id="obs" placeholder="État général, remarques…"></textarea></div>
+  `, `<button class="btn" onclick="fermerModale()">Annuler</button>
+      <button class="btn v" onclick="validerRetour('${c.id}')">Enregistrer le retour</button>`);
+}
+function validerRetour(id){
+  const c = S.commandes.find(x=>x.id===id);
+  const casse = [], manquant = [];
+  c.lignes.forEach((l,i)=>{
+    const k = parseInt($('#k'+i).value)||0, m = parseInt($('#m'+i).value)||0;
+    if(k>0) casse.push({ref:l.ref, nom:l.nom, qte:k, note:'constaté au retour'});
+    if(m>0) manquant.push({ref:l.ref, nom:l.nom, qte:m, note:'non restitué'});
+  });
+  c.retour = { le:auj().toISOString().slice(0,10), casse, manquant,
+               obs:$('#obs').value, par:U.nom };
+  c.statut = 'RETOURNEE';
+  tracer('Retour enregistré',
+    `${c.num} — ${casse.length} casse(s), ${manquant.length} manquant(s)`, c.id);
+  sauver(); fermerModale(); rendre();
+  toast(`Retour de ${c.num} enregistré.`, 'ok');
+}
+
+/* =========================================================================
+   VUE — VALIDATIONS
+   ========================================================================= */
+function vueValidations(){
+  const attente = S.validations.filter(v=>v.statut==='EN_ATTENTE');
+  const traitees = S.validations.filter(v=>v.statut!=='EN_ATTENTE');
+  const admin = U.role === 'ADMIN';
+
+  const carte = v => {
+    const c = S.commandes.find(x=>x.id===v.commandeId);
+    const desc = { RETRAIT:`Retirer « ${v.charge.nom||'un article'} »`,
+                   ANNULATION:'Annuler la commande',
+                   REMISE:`Réduction de ${(v.charge.remise||0)+(v.charge.escompte||0)} %`
+                     + ` (remise ${v.charge.remise||0} %`
+                     + (v.charge.escompte ? ` + escompte ${v.charge.escompte} %` : '') + ')'
+                 }[v.type];
+    return `<div class="carte" style="margin-bottom:12px">
+      <div style="display:flex;gap:11px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+        <span class="et ${v.statut}">${v.statut.replace('_',' ')}</span>
+        <b>${esc(desc)}</b>
+        <span style="color:var(--txt2)">sur ${esc(c?c.num:'?')} — ${esc(c?c.client:'')}</span>
+        <span style="margin-left:auto;color:var(--txt3);font-size:12px">
+          ${new Date(v.quand).toLocaleString('fr-FR')}</span>
+      </div>
+      <div style="background:#0a0a16;border-left:2px solid var(--rose);padding:10px 14px;
+        border-radius:0 7px 7px 0;font-size:13.5px;line-height:1.55;margin-bottom:10px">
+        <span class="puce-cat">Motif invoqué par ${esc(v.demandeur)}</span><br>${esc(v.motif)}</div>
+      ${v.commentaire?`<div style="color:var(--txt2);font-size:13px;margin-bottom:10px">
+        <b>${esc(v.decideur)}</b> : ${esc(v.commentaire)}</div>`:''}
+      ${v.statut==='EN_ATTENTE' ? (admin
+        ? `<div style="display:flex;gap:9px;justify-content:flex-end">
+             <button class="btn r" onclick="trancher('${v.id}',false)">Refuser</button>
+             <button class="btn v" onclick="trancher('${v.id}',true)">Approuver</button></div>`
+        : `<div style="color:var(--orange);font-size:13px">⏳ En attente de la décision de l'ADMIN</div>`)
+        : ''}
+    </div>`;
+  };
+
+  return `
+  <div class="entete">
+    <div><h2>Validations</h2>
+      <div class="sous">Retrait d'article, annulation et remise supérieure à ${SEUIL_REMISE} % —
+        les trois actions qui coûtent de l'argent</div></div>
+  </div>
+  ${!admin?`<div class="alerte">Vous consultez vos demandes. Seul l'ADMIN peut les trancher.</div>`:''}
+  <h3 style="font-size:15px;margin:0 0 12px">En attente (${attente.length})</h3>
+  ${attente.map(carte).join('') || '<div class="carte vide"><span class="ic">✅</span>Aucune demande en attente</div>'}
+  ${traitees.length?`<h3 style="font-size:15px;margin:26px 0 12px">Historique (${traitees.length})</h3>
+    ${traitees.map(carte).join('')}`:''}`;
+}
+
+/* =========================================================================
+   VUE — FACTURATION & ENCAISSEMENTS
+   ========================================================================= */
+/* ---------- Arbitrage des dégâts avant facturation ---------- */
+function arbitrerRetenues(id){
+  const c = S.commandes.find(x=>x.id===id);
+  const inc = incidents(c);
+  const t = totalCommande(c);
+
+  modale(`Retenues sur caution — ${esc(c.num)}`, `
+    <div class="alerte">Le préparateur a constaté ${inc.length} incident(s) au retour du
+      ${frDate(c.retour.le)}. Chiffrez ce qui reste à la charge du client :
+      les montants sont pré-remplis à la <b>valeur de remplacement</b> du catalogue,
+      corrigez-les librement.</div>
+    <div class="tbl-scroll">
+    <table><thead><tr><th>Incident</th><th class="num">Qté</th>
+      <th class="num" style="width:120px">P.U.</th><th class="num" style="width:130px">Retenue</th>
+      </tr></thead><tbody>
+      ${inc.map((x,i)=>{
+        const a = S.articles.find(y=>y.ref===x.ref);
+        const pu = (a && a.valeur) ? a.valeur : 0;
+        return `<tr>
+          <td><b>${esc(x.nom || (a?a.nom:x.ref))}</b>
+            <div class="puce-cat">${esc(x.ref)} — ${x.type==='CASSE'?'cassé':'non restitué'}</div></td>
+          <td class="num">${x.qte}</td>
+          <td class="num" style="color:var(--txt2)">${fcfa(pu)}</td>
+          <td><input id="ret${i}" type="number" min="0" step="1000" value="${pu*x.qte}"
+            oninput="majTotalRetenues()" style="width:120px;padding:6px 9px;text-align:right;
+            background:#0a0a16;border:1px solid var(--bord);border-radius:6px"></td>
+        </tr>`;
+      }).join('')}
+    </tbody></table></div>
+    <div class="champ" style="margin-top:14px"><label>Observation portée sur la facture</label>
+      <input id="ret-note" value="${esc(c.retour.obs||'')}" placeholder="Facultatif"></div>
+    <div class="ligne-sep"></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;color:var(--txt2)">
+      <span>Caution consignée</span><span>${fcfa(t.caution)}</span></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;color:var(--orange)">
+      <span>Total des retenues</span><span id="ret-total" data-caution="${t.caution}">—</span></div>
+    <div style="display:flex;justify-content:space-between;font-weight:700">
+      <span id="ret-lab">Caution restituée</span><span id="ret-solde">—</span></div>
+    <div class="alerte c" style="margin:14px 0 0">Une retenue supérieure à la caution
+      n'est pas perdue : l'excédent est reporté sur la facture.</div>
+  `, `<button class="btn" onclick="fermerModale()">Annuler</button>
+      <button class="btn v" onclick="validerRetenues('${c.id}')">Valider et facturer</button>`);
+  majTotalRetenues();
+}
+
+function majTotalRetenues(){
+  let total = 0, i = 0, e;
+  while((e = $('#ret'+i))){ total += parseFloat(e.value)||0; i++; }
+  const caution = parseFloat($('#ret-total').dataset.caution || 0);
+  $('#ret-total').textContent = fcfa(total);
+  const rendue = Math.max(0, caution - total), exces = Math.max(0, total - caution);
+  $('#ret-lab').textContent  = exces ? 'À ajouter à la facture' : 'Caution restituée';
+  $('#ret-solde').textContent = exces ? fcfa(exces) : fcfa(rendue);
+  $('#ret-solde').style.color = exces ? 'var(--rouge)' : 'var(--vert)';
+}
+
+function validerRetenues(id){
+  const c = S.commandes.find(x=>x.id===id);
+  const inc = incidents(c);
+  c.retenues = inc.map((x,i)=>{
+    const a = S.articles.find(y=>y.ref===x.ref);
+    return { ref:x.ref, nom:x.nom || (a?a.nom:x.ref), type:x.type, qte:x.qte,
+             montant: Math.max(0, parseFloat($('#ret'+i).value)||0) };
+  }).filter(x=>x.montant > 0);
+  c.retenuesFaites = true;
+  c.retenuesNote = $('#ret-note').value;
+  const t = totalCommande(c);
+  tracer('Retenues arbitrées',
+    `${c.num} : ${fcfa(t.retenue)} retenus sur ${fcfa(t.caution)} de caution`
+    + (t.excedent ? ` — excédent de ${fcfa(t.excedent)} reporté sur la facture` : ''), c.id);
+  sauver(); fermerModale();
+  emettreFacture(id);
+}
+
+function facturer(id){
+  const c = S.commandes.find(x=>x.id===id);
+  // S'il y a des dégâts non arbitrés, on les chiffre avant d'émettre la facture.
+  if(incidents(c).length && !c.retenuesFaites){ arbitrerRetenues(id); return; }
+  if(c.retour && !c.retenuesFaites) c.retenuesFaites = true;   // retour sans incident
+  emettreFacture(id);
+}
+
+function emettreFacture(id){
+  const c = S.commandes.find(x=>x.id===id);
+  S.compteur.fac++;
+  c.facture = { num:'FAC-2026-'+String(S.compteur.fac).padStart(3,'0'),
+                le:auj().toISOString().slice(0,10), par:U.nom };
+  c.statut = 'FACTUREE';
+  tracer('Facturation', `${c.facture.num} émise pour ${c.num} — ${fcfa(totalCommande(c).net)}`, c.id);
+  sauver(); fermerModale(); rendre();
+  toast(`${c.facture.num} émise.`, 'ok');
+}
+function encaisser(id){
+  const c = S.commandes.find(x=>x.id===id);
+  const r = reste(c);
+  modale(`Encaissement — ${esc(c.facture.num)}`, `
+    <div style="display:flex;justify-content:space-between;margin-bottom:14px">
+      <span style="color:var(--txt2)">Reste dû</span>
+      <b style="font-size:19px;color:var(--rouge)">${fcfa(r)}</b></div>
+    <div class="champ"><label>Montant encaissé</label>
+      <input id="pmt" type="number" min="1" max="${r}" value="${r}"></div>
+    <div class="champ"><label>Mode de règlement</label>
+      <select id="mode"><option>Espèces</option><option>Mobile money</option>
+        <option>Virement</option><option>Chèque</option></select></div>
+  `, `<button class="btn" onclick="fermerModale()">Annuler</button>
+      <button class="btn p" onclick="validerPaiement('${c.id}')">Enregistrer le règlement</button>`);
+}
+/* Restitution de la caution : un mouvement de caisse en sens inverse. */
+function restituerCaution(id){
+  const c = S.commandes.find(x=>x.id===id);
+  const m = aRestituer(c);
+  const t = totalCommande(c);
+  if(!confirm(`Restituer ${fcfa(m)} à ${c.client} ?\n\n`
+    + `Caution consignée : ${fcfa(t.caution)}\n`
+    + `Retenue casse et manquants : ${fcfa(t.retenue)}\n`
+    + `Solde rendu : ${fcfa(m)}`)) return;
+  S.paiements.push({ id:uid('P'), commandeId:id, montant:-m, mode:'Restitution de caution',
+                     le:auj().toISOString().slice(0,10), par:U.nom });
+  if(reste(c) <= 0 && c.facture) c.statut = 'SOLDEE';
+  tracer('Restitution de caution', `${fcfa(m)} rendus sur ${c.num}`, id);
+  sauver(); fermerModale(); rendre();
+  toast(`${fcfa(m)} restitués au client.`, 'ok');
+}
+
+function validerPaiement(id){
+  const c = S.commandes.find(x=>x.id===id);
+  const m = parseFloat($('#pmt').value);
+  if(!m || m<=0){ toast("Montant invalide.", 'err'); return; }
+  S.paiements.push({ id:uid('P'), commandeId:id, montant:m, mode:$('#mode').value,
+                     le:auj().toISOString().slice(0,10), par:U.nom });
+  tracer('Encaissement', `${fcfa(m)} sur ${c.facture.num} (${$('#mode').value})`, id);
+  if(reste(c) <= 0) c.statut = 'SOLDEE';
+  sauver(); fermerModale(); rendre();
+  toast(`${fcfa(m)} encaissés.`, 'ok');
+}
+
+/* =========================================================================
+   MODÈLE DE FACTURE — document imprimable
+   ========================================================================= */
+function voirFacture(id){
+  const c = S.commandes.find(x=>x.id===id);
+  const t = totalCommande(c);
+  const enc = encaisse(c.id), r = reste(c);
+  const so = S.societe;
+  const reglements = S.paiements.filter(p=>p.commandeId===c.id);
+  const num = c.facture ? c.facture.num : 'PROFORMA';
+  const le  = c.facture ? c.facture.le  : auj().toISOString().slice(0,10);
+  const ech = new Date(new Date(le).getTime() + (so.delaiReglement||30)*864e5).toISOString().slice(0,10);
+
+  const ligneTotal = (lab, val, cls) =>
+    `<tr class="${cls||''}"><td class="ft-lab">${lab}</td><td class="ft-val">${val}</td></tr>`;
+
+  $('#facture').innerHTML = `
+    <div class="fac-tete">
+      <div class="fac-emet">
+        <img src="${document.querySelector('.marque img').getAttribute('src')}" alt="">
+        <div>
+          <div class="fac-nom">${esc(so.nom)}</div>
+          <div class="fac-p">${esc(so.activite)}</div>
+          <div class="fac-p">${esc(so.ville)}</div>
+          <div class="fac-p">Tél. ${esc(so.tel)} — ${esc(so.mail)}</div>
+          <div class="fac-p">${esc(so.rccm)} — ${esc(so.cc)}</div>
+        </div>
+      </div>
+      <div class="fac-ref">
+        <div class="fac-titre">${c.facture ? 'FACTURE' : 'PROFORMA'}</div>
+        <div class="fac-num">${esc(num)}</div>
+        <div class="fac-p">Émise le ${frDate(le)}</div>
+        <div class="fac-p">Échéance ${frDate(ech)}</div>
+      </div>
+    </div>
+
+    <div class="fac-parties">
+      <div><div class="fac-lab">Facturé à</div>
+        <div class="fac-fort">${esc(c.client)}</div>
+        <div class="fac-p">${esc(c.tel||'')}</div></div>
+      <div><div class="fac-lab">Prestation</div>
+        <div class="fac-fort">Location de matériel événementiel</div>
+        <div class="fac-p">Du ${frDate(c.debut)} au ${frDate(c.fin)} — ${t.jours} jour(s)</div>
+        <div class="fac-p">${esc(c.lieu||'')}</div>
+        <div class="fac-p">Commande ${esc(c.num)}</div></div>
+    </div>
+
+    <div class="fac-lignes-wrap">
+    <table class="fac-lignes">
+      <thead><tr><th>Réf.</th><th>Désignation</th><th class="num">Qté</th>
+        <th class="num">Jours</th><th class="num">P.U. / jour</th><th class="num">Montant HT</th></tr></thead>
+      <tbody>
+        ${c.lignes.map(l=>`<tr>
+          <td>${esc(l.ref)}</td><td>${esc(l.nom)}</td>
+          <td class="num">${l.qte}</td><td class="num">${t.jours}</td>
+          <td class="num">${fcfa(l.prix)}</td>
+          <td class="num">${fcfa(l.qte*l.prix*t.jours)}</td></tr>`).join('')}
+      </tbody>
+    </table></div>
+
+    <div class="fac-bas">
+      <div class="fac-mentions">
+        ${incidents(c).length ? `
+          <div class="fac-lab">Constat de retour du ${frDate(c.retour.le)}</div>
+          ${(c.retenues && c.retenues.length
+            ? c.retenues.map(x=>`<div class="fac-p">${x.type==='CASSE'?'Casse':'Non restitué'} :
+                ${x.qte} × ${esc(x.nom)} (${esc(x.ref)}) — retenue ${fcfa(x.montant)}</div>`).join('')
+            : incidents(c).map(x=>`<div class="fac-p">${x.type==='CASSE'?'Casse':'Non restitué'} :
+                ${x.qte} × ${esc(x.ref)}</div>`).join(''))}
+          ${c.retenuesNote ? `<div class="fac-p" style="margin-top:4px"><i>${esc(c.retenuesNote)}</i></div>` : ''}
+          ${c.retenuesFaites && t.caution ? `<div class="fac-p" style="margin-top:5px">
+            Caution consignée ${fcfa(t.caution)} — retenue ${fcfa(t.retenue)} —
+            ${t.excedent
+              ? `retenue supérieure à la caution de ${fcfa(t.excedent)}, reporté au total dû.`
+              : `<b>solde de ${fcfa(t.cautionRendue)} restitué au client</b>.`}</div>` : ''}
+          <div style="height:10px"></div>` : ''}
+        ${reglements.length ? `<div class="fac-lab">Règlements reçus</div>
+          ${reglements.map(p=>`<div class="fac-p">${frDate(p.le)} — ${esc(p.mode)} : ${fcfa(p.montant)}</div>`).join('')}
+          <div style="height:10px"></div>` : ''}
+        <div class="fac-lab">Conditions</div>
+        <div class="fac-p">Règlement à ${so.delaiReglement||30} jours à compter de l'émission.</div>
+        ${t.caution ? `<div class="fac-p">La caution de ${fcfa(t.caution)} est consignée et restituée
+          au retour du matériel, déduction faite des éventuels dégâts ou manquants.</div>` : ''}
+        <div class="fac-p">Le matériel reste la propriété de ${esc(so.nom)} pendant toute la location.</div>
+      </div>
+
+      <table class="fac-totaux">
+        ${ligneTotal('Total brut HT', fcfa(t.brut))}
+        ${t.remise ? ligneTotal(`Remise ${t.tauxRemise} %`, '− '+fcfa(t.remise)) : ''}
+        ${t.remise ? ligneTotal('Net commercial HT', fcfa(t.netCom)) : ''}
+        ${t.escompte ? ligneTotal(`Escompte ${t.tauxEscompte} %`, '− '+fcfa(t.escompte)) : ''}
+        ${t.escompte ? ligneTotal('Net financier HT', fcfa(t.netFin)) : ''}
+        ${ligneTotal(`TVA ${t.tauxTva} %`, fcfa(t.tva))}
+        ${ligneTotal('Total TTC', fcfa(t.ttc), 'ft-sous')}
+        ${t.retenue ? ligneTotal('Retenue casse et manquants', fcfa(t.retenue)) : ''}
+        ${t.caution && !c.retenuesFaites ? ligneTotal('Caution consignée', fcfa(t.caution)) : ''}
+        ${ligneTotal(c.retenuesFaites ? 'Total dû' : (t.caution ? 'Total à encaisser' : 'Total'),
+                     fcfa(duTotal(c)), 'ft-sous')}
+        ${enc ? ligneTotal('Déjà réglé', '− '+fcfa(enc)) : ''}
+        ${aRestituer(c) > 0
+          ? ligneTotal('SOLDE À RESTITUER', fcfa(aRestituer(c)), 'ft-net')
+          : ligneTotal('NET À PAYER', fcfa(r), 'ft-net')}
+      </table>
+    </div>
+
+    <div class="fac-pied">
+      ${esc(so.nom)} — ${esc(so.ville)} — ${esc(so.tel)}
+      ${c.facture ? '' : ' · Document non contractuel : proforma établie avant facturation.'}
+    </div>`;
+
+  $('#voile-facture').classList.add('on');
+}
+function fermerFacture(){ $('#voile-facture').classList.remove('on'); }
+function imprimerFacture(){ window.print(); }
+
+function vueFacturation(){
+  const aFacturer = S.commandes.filter(c=>c.statut==='RETOURNEE');
+  const factures  = S.commandes.filter(c=>c.facture)
+                     .sort((a,b)=>b.facture.le.localeCompare(a.facture.le));
+  const totalDu = factures.reduce((s,c)=>s+reste(c),0);
+
+  return `
+  <div class="entete">
+    <div><h2>Facturation & encaissements</h2>
+      <div class="sous">Le suivi des règlements conditionne toute relance d'impayé</div></div>
+  </div>
+
+  <div class="grille stats" style="margin-bottom:18px">
+    <div class="carte stat orange"><div class="lab">À facturer</div>
+      <div class="val">${aFacturer.length}</div><div class="det">retours contrôlés, facture non émise</div></div>
+    <div class="carte stat cyan"><div class="lab">Factures émises</div>
+      <div class="val">${factures.length}</div><div class="det">depuis le début</div></div>
+    <div class="carte stat rouge"><div class="lab">Reste à encaisser</div>
+      <div class="val" style="font-size:21px">${fcfa(totalDu)}</div>
+      <div class="det">${factures.filter(c=>reste(c)>0).length} facture(s) ouverte(s)</div></div>
+  </div>
+
+  ${aFacturer.length?`<div class="carte" style="margin-bottom:16px">
+    <h3 style="font-size:15px;margin-bottom:12px">En attente de facturation</h3>
+    <div class="tbl-scroll"><table><tbody>
+      ${aFacturer.map(c=>`<tr>
+        <td style="width:120px">${esc(c.num)}</td>
+        <td><b>${esc(c.client)}</b></td>
+        <td class="num">${fcfa(totalCommande(c).net)}</td>
+        <td style="text-align:right;width:210px">
+          <button class="btn mini" onclick="ouvrirCommande('${c.id}')">Détail</button>
+          <button class="btn mini p" onclick="facturer('${c.id}')">Facturer</button></td>
+      </tr>`).join('')}
+    </tbody></table></div></div>`:''}
+
+  <div class="carte">
+    <h3 style="font-size:15px;margin-bottom:12px">Factures</h3>
+    <div class="tbl-scroll">
+    <table><thead><tr><th>Facture</th><th>Client</th><th>Date</th>
+      <th class="num">Montant</th><th class="num">Encaissé</th>
+      <th class="num">Reste</th><th></th></tr></thead><tbody>
+      ${factures.map(c=>{
+        const t = totalCommande(c), e = encaisse(c.id), r = reste(c);
+        return `<tr>
+          <td style="font-variant-numeric:tabular-nums">${esc(c.facture.num)}</td>
+          <td><b>${esc(c.client)}</b><div class="puce-cat">${esc(c.num)}</div></td>
+          <td>${frDate(c.facture.le)}</td>
+          <td class="num">${fcfa(t.net)}</td>
+          <td class="num" style="color:var(--vert)">${fcfa(e)}</td>
+          <td class="num" style="color:${r>0?'var(--rouge)':'var(--txt3)'}">${r>0?fcfa(r):'—'}</td>
+          <td style="text-align:right;white-space:nowrap">
+            <button class="btn mini" onclick="voirFacture('${c.id}')">Facture</button>
+            ${r>0?`<button class="btn mini p" onclick="encaisser('${c.id}')">Encaisser</button>`
+                 :'<span class="et SOLDEE">SOLDÉE</span>'}</td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="7" class="vide">Aucune facture</td></tr>'}
+    </tbody></table></div>
+  </div>`;
+}
+
+/* =========================================================================
+   VUE — JOURNAL DE TRACABILITE
+   ========================================================================= */
+function vueJournal(){
+  return `
+  <div class="entete">
+    <div><h2>Traçabilité</h2>
+      <div class="sous">Qui a fait quoi, quand, et pourquoi — ${S.journal.length} événements</div></div>
+  </div>
+  <div class="carte"><div class="tbl-scroll">
+    <table><thead><tr><th style="width:150px">Horodatage</th><th style="width:150px">Utilisateur</th>
+      <th style="width:190px">Action</th><th>Détail</th></tr></thead><tbody>
+      ${S.journal.map(e=>`<tr>
+        <td style="color:var(--txt3);font-size:12.5px">${new Date(e.quand).toLocaleString('fr-FR')}</td>
+        <td>${esc(e.qui)}<div class="puce-cat">${esc(e.role)}</div></td>
+        <td><b>${esc(e.action)}</b></td>
+        <td style="color:var(--txt2)">${esc(e.detail)}</td>
+      </tr>`).join('') || '<tr><td colspan="4" class="vide">Journal vide</td></tr>'}
+    </tbody></table></div>
+  </div>`;
+}
+
+/* =========================================================================
+   VUE — SCENARIO DE DEMONSTRATION
+   ========================================================================= */
+function vueDemo(){
+  return `
+  <div class="entete">
+    <div><h2>Scénario de démonstration</h2>
+      <div class="sous">Six étapes pour montrer l'essentiel en trois minutes</div></div>
+  </div>
+  <div class="grille deux-col">
+    <div class="carte">
+      <ol class="scenario">
+        <li>Connectez-vous en <b>MANAGER</b>. Créez une commande : un mariage samedi prochain,
+            avec 150 chaises Napoléon et 2 enceintes. Le stock disponible se recalcule à chaque
+            changement de date — <i>le stock est un calendrier, pas un compteur</i>.</li>
+        <li>Cliquez <b>Suivant</b>. L'étape « Facturation » fixe la remise, l'escompte,
+            l'acompte et la caution, et la facture se recalcule en direct à droite.
+            Demandez <b>25 % de remise</b> : l'appli enregistre la commande <b>au tarif plein</b>,
+            exige un motif écrit et envoie la réduction en validation. Impossible de se
+            servir soi-même en créant la commande déjà remisée.</li>
+        <li>Reconnectez-vous en <b>ADMIN</b>. La demande vous attend dans « Validations »
+            avec son motif. Approuvez-la : la remise s'applique seule.</li>
+        <li>Passez en <b>PRÉPARATEUR</b>. Dans « Préparation », sortez le matériel du dépôt,
+            puis confirmez le départ.</li>
+        <li>Toujours en préparateur, saisissez le <b>retour</b> en déclarant 1 projecteur
+            cassé et 2 nappes manquantes. Il constate les dégâts, mais ne les chiffre pas :
+            ce n'est pas son rôle.</li>
+        <li>Revenez en <b>MANAGER</b> et cliquez <b>Facturer</b>. L'appli ne facture pas
+            tout de suite : elle ouvre l'<b>arbitrage des retenues</b>, chaque dégât
+            pré-chiffré à la valeur de remplacement du catalogue. Corrigez un montant et
+            voyez la caution restituée se recalculer en direct.</li>
+        <li>Ouvrez <b>Voir la facture</b> : le document complet, avec la cascade remise →
+            escompte → TVA → caution → retenues → acompte, imprimable ou exportable en PDF.
+            Restituez le solde de caution, puis terminez sur « Traçabilité »
+            (visible en ADMIN) : chaque geste est daté, motivé et signé.</li>
+      </ol>
+    </div>
+    <div>
+      <div class="carte" style="margin-bottom:14px">
+        <h3 style="font-size:15px;margin-bottom:10px">La règle à faire retenir</h3>
+        <p style="line-height:1.65;color:var(--txt2);font-size:13.5px">
+          Le manager <b style="color:var(--txt)">ajoute librement</b>.
+          Mais <b style="color:var(--rose-clair)">retirer un article</b>,
+          <b style="color:var(--rose-clair)">annuler une commande</b> ou accorder une
+          <b style="color:var(--rose-clair)">remise supérieure à ${SEUIL_REMISE} %</b>
+          exige l'accord de l'ADMIN, avec un motif écrit et conservé.
+          C'est ce qui empêche une ligne facturable de disparaître discrètement.</p>
+      </div>
+      <div class="carte">
+        <h3 style="font-size:15px;margin-bottom:10px">À dire pendant la démo</h3>
+        <p style="line-height:1.65;color:var(--txt2);font-size:13px">
+          Cette maquette tourne <b style="color:var(--txt)">sans internet et sans serveur</b>,
+          uniquement pour montrer les écrans et les règles de gestion.
+          La version réelle décrite au cahier des charges tourne sur un serveur Ubuntu
+          avec PostgreSQL, accessible depuis les téléphones du dépôt.</p>
+        <div class="alerte" style="margin:14px 0 0;font-size:12.5px">
+          <b>Hypothèses de maquette</b> à confirmer au cahier des charges :
+          tarif unique par jour (ni forfait week-end ni dégressif), articles comptés
+          en quantité et non suivis par numéro de série, retenues traitées comme des
+          indemnités et donc hors TVA, mentions légales (RCCM, compte contribuable)
+          à renseigner avant tout usage réel.</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* =========================================================================
+   MODALE
+   ========================================================================= */
+function modale(titre, corps, boutons){
+  $('#modale').innerHTML = `
+    <header><h3>${titre}</h3><button class="x" onclick="fermerModale()">×</button></header>
+    <div class="corps">${corps}</div>
+    ${boutons?`<footer>${boutons}</footer>`:''}`;
+  $('#voile').classList.add('on');
+}
+function fermerModale(){ $('#voile').classList.remove('on'); }
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') fermerModale(); });
+
+/* ---------- Demarrage ---------- */
+if(!charger()) semer();
+</script>
+</body>
+</html>
