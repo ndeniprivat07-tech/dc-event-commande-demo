@@ -913,16 +913,63 @@ const MENU = [
    La vérification reste locale à l'appareil — elle protège d'un curieux sur
    un téléphone partagé, pas d'une personne capable de lire le code source.
    ========================================================================= */
+const ITERATIONS = 150000;        // coût de dérivation : ~0,3 s ici, des mois pour une attaque
+
+const hex = buf => [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+
+/* Empreinte historique, un seul passage de SHA-256. Conservée uniquement
+   pour reconnaître les installations antérieures et les faire migrer. */
 async function hacher(txt, sel){
   const donnee = (sel || '') + '|' + txt;
-  if(window.crypto && crypto.subtle){
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(donnee));
-    return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
-  }
-  // Repli si crypto.subtle est indisponible (contexte non sécurisé)
+  if(window.crypto && crypto.subtle)
+    return hex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(donnee)));
   let h = 0;
   for(let i=0; i<donnee.length; i++) h = (Math.imul(h,31) + donnee.charCodeAt(i)) | 0;
   return 'r' + (h>>>0).toString(16);
+}
+
+/* PBKDF2 : la dérivation est délibérément lente. Une empreinte volée ne se
+   casse plus par force brute en quelques secondes, mais en des mois. */
+async function deriver(txt, sel, iter){
+  const cle = await crypto.subtle.importKey('raw',
+    new TextEncoder().encode(txt), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name:'PBKDF2', salt:new TextEncoder().encode(sel), iterations:iter, hash:'SHA-256' },
+    cle, 256);
+  return hex(bits);
+}
+
+/* Empreinte de stockage : format « pbkdf2$<itérations>$<empreinte> ». */
+async function empreinte(txt){
+  if(window.crypto && crypto.subtle)
+    return `pbkdf2$${ITERATIONS}$${await deriver(txt, S.sel, ITERATIONS)}`;
+  return await hacher(txt, S.sel);          // repli, signalé à l'écran Mots de passe
+}
+
+/* Vérifie une saisie contre une empreinte stockée, quel que soit son format.
+   Une empreinte à l'ancien format est remplacée dès qu'elle est validée. */
+async function verifier(txt, stocke){
+  if(!stocke) return false;
+  if(stocke.startsWith('pbkdf2$')){
+    const [, iter, att] = stocke.split('$');
+    return await deriver(txt, S.sel, parseInt(iter)) === att;
+  }
+  return await hacher(txt, S.sel) === stocke;   // ancien format
+}
+function ancienFormat(stocke){ return !!stocke && !stocke.startsWith('pbkdf2$'); }
+
+/* ---------- Politique de mot de passe ---------- */
+const MDP_MIN = 8;
+function critiquerMdp(mdp, role){
+  if(mdp.length < MDP_MIN) return `Au moins ${MDP_MIN} caractères (actuellement ${mdp.length}).`;
+  const b = mdp.toLowerCase();
+  if(Object.values(MDP_DEFAUT).includes(b)) return "C'est le mot de passe d'origine, connu de tous.";
+  if(b.includes(role.toLowerCase())) return "Il ne doit pas contenir le nom du profil.";
+  if(b.includes('dcevent') || b.includes('dc-event')) return "Il ne doit pas contenir le nom de l'application.";
+  if(/^(.)\1+$/.test(mdp)) return "Un même caractère répété se devine immédiatement.";
+  if(/^\d+$/.test(mdp)) return "Uniquement des chiffres : trop facile à essayer en série.";
+  if(/^(012|123|234|345|456|567|678|789|abc|qwe|aze)/.test(b)) return "Suite trop prévisible.";
+  return null;                                  // accepté
 }
 
 /* ---------- Code de secours ----------
@@ -945,7 +992,7 @@ function genererCode(){
 
 async function genererCodeSecours(){
   const code = genererCode();
-  S.codeSecours = await hacher(code, S.sel);
+  S.codeSecours = await empreinte(code);
   S.codeSecoursLe = auj().toISOString().slice(0,10);
   tracer('Code de secours généré', 'ancien code invalidé');
   sauver();
@@ -983,18 +1030,27 @@ async function validerRecuperation(){
   const code = $('#r-code').value.trim().toUpperCase();
   const neuf = $('#r-neuf').value, conf = $('#r-conf').value;
   if(!S.codeSecours){ toast("Aucun code de secours n'a été défini sur cet appareil.", 'err'); return; }
-  if(await hacher(code, S.sel) !== S.codeSecours){
-    tracer('Récupération refusée', 'code de secours incorrect');
-    sauver(); toast("Code de secours incorrect.", 'err'); return;
+
+  const reste = resteBlocage('code');
+  if(reste){ toast(`Trop d'essais — réessayez dans ${reste} s.`, 'err'); return; }
+
+  if(!await verifier(code, S.codeSecours)){
+    const delai = echec('code', 'code de secours');
+    toast(delai ? `Code incorrect — bloqué ${delai >= 60 ? Math.round(delai/60)+' min' : delai+' s'}.`
+                : `Code de secours incorrect — ${MAX_ESSAIS - compteur('code').n} essai(s) restant(s).`, 'err');
+    return;
   }
-  if(neuf.length < 4){ toast("Le mot de passe doit faire au moins 4 caractères.", 'err'); return; }
+  succes('code');
+
+  const souci = critiquerMdp(neuf, 'ADMIN');
+  if(souci){ toast(souci, 'err'); return; }
   if(neuf !== conf){ toast("Les deux saisies ne correspondent pas.", 'err'); return; }
 
-  S.motsDePasse.ADMIN = await hacher(neuf, S.sel);
+  S.motsDePasse.ADMIN = await empreinte(neuf);
   if(!S.mdpChange) S.mdpChange = {};
   S.mdpChange.ADMIN = true;
   S.codeSecours = null;              // à usage unique
-  essais.ADMIN = { n:0, bloqueJusqua:0 };
+  succes('mdp:ADMIN');
   tracer('Mot de passe ADMIN redéfini', 'via code de secours — code consommé');
   sauver(); fermerModale(); retourRoles();
   toast("Mot de passe ADMIN redéfini. Générez un nouveau code de secours.", 'ok');
@@ -1080,7 +1136,37 @@ async function connexionEmpreinte(role){
 }
 
 let roleChoisi = null;
-const essais = {};                // compteur en mémoire, remis à zéro au rechargement
+
+/* Le compteur d'essais vit dans les données enregistrées, pas en mémoire :
+   sinon il suffirait de recharger la page pour repartir à zéro. */
+function compteur(cle){
+  if(!S.essais) S.essais = {};
+  if(!S.essais[cle]) S.essais[cle] = { n:0, bloqueJusqua:0 };
+  return S.essais[cle];
+}
+function resteBlocage(cle){
+  return Math.max(0, Math.ceil((compteur(cle).bloqueJusqua - Date.now()) / 1000));
+}
+function echec(cle, libelle){
+  const e = compteur(cle);
+  e.n++;
+  if(e.n >= MAX_ESSAIS){
+    // Le délai double à chaque série manquée : 1 min, 2, 4, 8… plafonné à 1 h.
+    e.series = (e.series || 0) + 1;
+    const delai = Math.min(3600, 60 * Math.pow(2, e.series - 1));
+    e.bloqueJusqua = Date.now() + delai * 1000;
+    e.n = 0;
+    tracer('Connexion refusée', `${libelle} — bloqué ${delai} s après ${MAX_ESSAIS} essais`);
+    sauver();
+    return delai;
+  }
+  sauver();
+  return 0;
+}
+function succes(cle){
+  if(S.essais) S.essais[cle] = { n:0, bloqueJusqua:0, series:0 };
+  sauver();
+}
 
 function demanderMdp(role){
   roleChoisi = role;
@@ -1115,37 +1201,36 @@ function retourRoles(){
 
 async function validerMdp(){
   if(!roleChoisi) return;
-  const champ = $('#mdp-champ'), err = $('#mdp-err');
-  const e = essais[roleChoisi] || { n:0, bloqueJusqua:0 };
+  const champ = $('#mdp-champ'), err = $('#mdp-err'), bouton = $('#mdp-ok');
+  const cle = 'mdp:' + roleChoisi;
 
-  if(Date.now() < e.bloqueJusqua){
-    err.textContent = `Profil bloqué ${Math.ceil((e.bloqueJusqua-Date.now())/1000)} s après trop d'essais.`;
-    return;
-  }
+  const reste = resteBlocage(cle);
+  if(reste){ err.textContent = `Profil bloqué encore ${reste} s après trop d'essais.`; return; }
   if(!champ.value){ err.textContent = 'Saisissez le mot de passe.'; champ.focus(); return; }
 
-  const attendu = S.motsDePasse[roleChoisi];
-  const propose = await hacher(champ.value, S.sel);
+  // La dérivation prend un instant : on le montre plutôt que de sembler figé.
+  bouton.disabled = true; bouton.textContent = 'Vérification…';
+  const stocke = S.motsDePasse[roleChoisi];
+  const ok = await verifier(champ.value, stocke);
+  bouton.disabled = false; bouton.textContent = 'Se connecter';
 
-  if(propose === attendu){
-    essais[roleChoisi] = { n:0, bloqueJusqua:0 };
+  if(ok){
+    // Migration silencieuse d'une empreinte à l'ancien format
+    if(ancienFormat(stocke)){
+      S.motsDePasse[roleChoisi] = await empreinte(champ.value);
+      tracer('Empreinte de mot de passe renforcée', `profil ${roleChoisi}`);
+    }
+    succes(cle);
     const r = roleChoisi;
     retourRoles();
     connexion(r);
     return;
   }
 
-  e.n++;
-  if(e.n >= MAX_ESSAIS){
-    e.bloqueJusqua = Date.now() + 60000;
-    e.n = 0;
-    err.textContent = `${MAX_ESSAIS} essais manqués : profil bloqué une minute.`;
-    tracer('Connexion refusée', `${roleChoisi} — profil bloqué après ${MAX_ESSAIS} essais`);
-    sauver();
-  } else {
-    err.textContent = `Mot de passe incorrect — ${MAX_ESSAIS - e.n} essai(s) restant(s).`;
-  }
-  essais[roleChoisi] = e;
+  const delai = echec(cle, roleChoisi);
+  err.textContent = delai
+    ? `${MAX_ESSAIS} essais manqués : profil bloqué ${delai >= 60 ? Math.round(delai/60)+' min' : delai+' s'}.`
+    : `Mot de passe incorrect — ${MAX_ESSAIS - compteur(cle).n} essai(s) restant(s).`;
   champ.classList.add('faux');
   setTimeout(()=>champ.classList.remove('faux'), 320);
   champ.value = ''; champ.focus();
@@ -2624,9 +2709,21 @@ function vueSecurite(){
       <div class="sous">Un mot de passe par profil — à changer avant la mise en service</div></div>
   </div>
 
+  ${(() => {
+    const faibles = Object.entries(S.motsDePasse).filter(([,h])=>ancienFormat(h)).map(([r])=>r);
+    return faibles.length
+      ? `<div class="alerte r">⚠ ${faibles.join(', ')} : empreinte à l'ancien format,
+           cassable rapidement si l'appareil est volé. Elle sera renforcée
+           automatiquement à la prochaine connexion de ce profil.</div>`
+      : `<div class="alerte v">✓ Toutes les empreintes utilisent la dérivation lente
+           (PBKDF2, ${ITERATIONS.toLocaleString('fr-FR')} itérations) : une empreinte volée
+           ne se casse plus par essais successifs en un temps raisonnable.</div>`;
+  })()}
+
   <div class="alerte">Les mots de passe sont conservés sous forme d'<b>empreinte salée</b>,
-    jamais en clair. La vérification se fait sur l'appareil : elle sépare les rôles
-    sur un téléphone partagé, elle ne remplace pas un contrôle côté serveur.</div>
+    jamais en clair, et le compteur d'essais survit au redémarrage de l'application.
+    La vérification reste locale à l'appareil : elle sépare les rôles sur un téléphone
+    partagé, elle ne remplace pas un contrôle côté serveur.</div>
 
   <div class="carte" style="margin-bottom:16px">
     ${['ADMIN','MANAGER','PREPARATEUR'].map(r=>{
@@ -2679,7 +2776,9 @@ function formMdp(role){
     ${soi ? `<div class="champ"><label>Mot de passe actuel</label>
       <input type="password" id="m-actuel" autocomplete="current-password"></div>` : ''}
     <div class="champ"><label>Nouveau mot de passe</label>
-      <input type="password" id="m-neuf" autocomplete="new-password"></div>
+      <input type="password" id="m-neuf" autocomplete="new-password">
+      <div class="puce-cat" style="margin-top:5px">${MDP_MIN} caractères minimum,
+        pas uniquement des chiffres</div></div>
     <div class="champ" style="margin-bottom:0"><label>Confirmer</label>
       <input type="password" id="m-conf" autocomplete="new-password"
         onkeydown="if(event.key==='Enter')enregistrerMdp('${role}')"></div>
@@ -2695,14 +2794,14 @@ async function enregistrerMdp(role){
   const soi = (role === U.role);
   const neuf = $('#m-neuf').value, conf = $('#m-conf').value;
 
-  if(soi){
-    const actuel = await hacher($('#m-actuel').value, S.sel);
-    if(actuel !== S.motsDePasse[role]){ toast("Mot de passe actuel incorrect.", 'err'); return; }
+  if(soi && !await verifier($('#m-actuel').value, S.motsDePasse[role])){
+    toast("Mot de passe actuel incorrect.", 'err'); return;
   }
-  if(neuf.length < 4){ toast("Le mot de passe doit faire au moins 4 caractères.", 'err'); return; }
+  const souci = critiquerMdp(neuf, role);
+  if(souci){ toast(souci, 'err'); return; }
   if(neuf !== conf){ toast("Les deux saisies ne correspondent pas.", 'err'); return; }
 
-  S.motsDePasse[role] = await hacher(neuf, S.sel);
+  S.motsDePasse[role] = await empreinte(neuf);
   if(!S.mdpChange) S.mdpChange = {};
   S.mdpChange[role] = true;
   tracer('Mot de passe modifié', `profil ${role}`);
@@ -2833,7 +2932,7 @@ async function assurerMotsDePasse(){
   if(!S.motsDePasse) S.motsDePasse = {};
   let change = false;
   for(const r of Object.keys(MDP_DEFAUT)){
-    if(!S.motsDePasse[r]){ S.motsDePasse[r] = await hacher(MDP_DEFAUT[r], S.sel); change = true; }
+    if(!S.motsDePasse[r]){ S.motsDePasse[r] = await empreinte(MDP_DEFAUT[r]); change = true; }
   }
   if(change) sauver();
 }
