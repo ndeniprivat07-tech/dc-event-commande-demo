@@ -15,6 +15,11 @@ hors connexion une fois chargée. Les données restent sur votre appareil
 
 ## Ce que montre la démonstration
 
+Chaque profil est protégé par un mot de passe. Pour la démonstration ils sont
+rappelés sur l'écran de connexion : `dc-admin`, `dc-manager`, `dc-depot`.
+Dans la version livrée au client, ils ne sont affichés nulle part et se
+changent depuis l'application.
+
 Trois profils, sélectionnés à l'ouverture :
 
 | Profil | Rôle |

@@ -59,6 +59,24 @@ a{color:var(--cyan)}
 }
 .role:hover{border-color:var(--rose);transform:translateY(-4px);box-shadow:0 10px 34px #ff2d7833}
 .role .ic{font-size:30px;display:block;margin-bottom:10px}
+
+/* Saisie du mot de passe : remplace la grille des profils */
+#etape-mdp{display:none;width:100%;max-width:340px;text-align:center;padding:0 16px}
+#etape-mdp.on{display:block}
+.mdp-ic{font-size:34px;margin-bottom:8px}
+.mdp-role{font-weight:700;letter-spacing:2px;font-size:15px}
+.mdp-qui{color:var(--txt2);font-size:13px;margin-bottom:16px}
+#mdp-champ{width:100%;padding:13px 15px;background:#0a0a16;border:1px solid var(--bord);
+  border-radius:10px;outline:none;font-size:16px;text-align:center;letter-spacing:2px;
+  transition:.15s}
+#mdp-champ:focus{border-color:var(--rose);box-shadow:0 0 0 3px #ff2d7822}
+#mdp-champ.faux{border-color:var(--rouge);animation:secousse .3s}
+@keyframes secousse{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.mdp-err{min-height:20px;color:#fca5a5;font-size:12.5px;margin:9px 0 4px;line-height:1.4}
+#mdp-aide{max-width:400px;padding:0 16px}
+.aide-mdp{border:1px dashed var(--bord-clair);border-radius:10px;padding:12px 15px;
+  font-size:12px;color:var(--txt2);line-height:1.7;text-align:left}
+.aide-mdp b{color:var(--txt);font-family:monospace;letter-spacing:.5px}
 .role .nom{display:block;font-weight:700;letter-spacing:1.5px;margin-bottom:7px}
 .role .desc{display:block;font-size:12px;color:var(--txt2);line-height:1.5}
 
@@ -460,20 +478,33 @@ th.num{text-align:right}
     <h1>DC EVENT <b>COMMANDE</b></h1>
   </div>
   <p>Gestion des locations de matériel événementiel — DC EVENT</p>
-  <div class="roles">
-    <button class="role" onclick="connexion('ADMIN')">
+  <div class="roles" id="etape-roles">
+    <button class="role" onclick="demanderMdp('ADMIN')">
       <span class="ic">🔑</span><span class="nom">ADMIN</span>
       <span class="desc">Valide les retraits, annulations et remises. Voit tout.</span>
     </button>
-    <button class="role" onclick="connexion('MANAGER')">
+    <button class="role" onclick="demanderMdp('MANAGER')">
       <span class="ic">📋</span><span class="nom">MANAGER</span>
       <span class="desc">Crée les devis, réserve le matériel, facture les clients.</span>
     </button>
-    <button class="role" onclick="connexion('PREPARATEUR')">
+    <button class="role" onclick="demanderMdp('PREPARATEUR')">
       <span class="ic">📦</span><span class="nom">PRÉPARATEUR</span>
       <span class="desc">Sort le matériel du dépôt et contrôle les retours.</span>
     </button>
   </div>
+
+  <div id="etape-mdp">
+    <div class="mdp-ic" id="mdp-ic">🔑</div>
+    <div class="mdp-role" id="mdp-role">ADMIN</div>
+    <div class="mdp-qui" id="mdp-qui">M. Bamba</div>
+    <input type="password" id="mdp-champ" placeholder="Mot de passe" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')validerMdp();if(event.key==='Escape')retourRoles()">
+    <div class="mdp-err" id="mdp-err"></div>
+    <button class="btn p" style="width:100%" id="mdp-ok" onclick="validerMdp()">Se connecter</button>
+    <button class="btn" style="width:100%;margin-top:9px" onclick="retourRoles()">← Choisir un autre profil</button>
+  </div>
+
+  <div id="mdp-aide"></div>
   <p style="font-size:11.5px;color:var(--txt3);margin-top:6px">
     Maquette de démonstration — fonctionne hors connexion, données stockées sur ce poste
   </p>
@@ -499,6 +530,8 @@ th.num{text-align:right}
     <div class="qui">
       <div class="r" id="qui-role"></div>
       <div class="n" id="qui-nom"></div>
+      <button class="btn mini" style="width:100%;margin-bottom:6px"
+        onclick="formMdp(U.role)">Changer mon mot de passe</button>
       <button class="btn mini" style="width:100%" onclick="deconnexion()">Changer d'utilisateur</button>
       <button class="btn mini" style="width:100%;margin-top:6px" onclick="reinitialiser()">Réinitialiser la démo</button>
     </div>
@@ -538,6 +571,9 @@ th.num{text-align:right}
    ========================================================================= */
 
 const CLE = 'dc-event-commande.v2';   // v2 : conditions financières par commande
+const DEMO_PUBLIQUE = true;      // mis à true dans la version publique en ligne
+const MDP_DEFAUT = { ADMIN:'dc-admin', MANAGER:'dc-manager', PREPARATEUR:'dc-depot' };
+const MAX_ESSAIS = 5;             // au-delà, le profil se bloque une minute
 const SEUIL_REMISE = 10;          // % au-dela duquel l'ADMIN doit valider
 const TVA_DEFAUT   = 18;          // taux en vigueur en Côte d'Ivoire
 let S = null;                      // etat complet de l'application
@@ -634,7 +670,11 @@ function semer(){
       art('DEC-03','Colonne lumineuse','Décoration',20,9000,95000)
     ],
     commandes:[], validations:[], paiements:[], journal:[],
-    compteur:{ cmd:0, fac:0 }
+    compteur:{ cmd:0, fac:0 },
+    // Le sel est propre à cette installation : deux postes n'auront pas la
+    // même empreinte pour un même mot de passe.
+    sel: Math.random().toString(36).slice(2) + Date.now().toString(36),
+    motsDePasse: {}
   };
 
   const L = (id,q) => { const a = S.articles.find(x=>x.id===id);
@@ -849,8 +889,86 @@ const MENU = [
   { cle:'validations', ic:'🔐', txt:'Validations',     roles:['ADMIN','MANAGER'] },
   { cle:'facturation', ic:'💰', txt:'Facturation',     roles:['ADMIN','MANAGER'] },
   { cle:'journal',     ic:'🕓', txt:'Traçabilité',     roles:['ADMIN'] },
+  { cle:'securite',    ic:'🔒', txt:'Mots de passe',   roles:['ADMIN'] },
   { cle:'demo',        ic:'🎬', txt:'Scénario démo',   roles:['ADMIN','MANAGER','PREPARATEUR'] }
 ];
+
+/* =========================================================================
+   MOTS DE PASSE
+   Empreinte SHA-256 salée : le mot de passe n'est jamais stocké en clair.
+   La vérification reste locale à l'appareil — elle protège d'un curieux sur
+   un téléphone partagé, pas d'une personne capable de lire le code source.
+   ========================================================================= */
+async function hacher(txt, sel){
+  const donnee = (sel || '') + '|' + txt;
+  if(window.crypto && crypto.subtle){
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(donnee));
+    return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  // Repli si crypto.subtle est indisponible (contexte non sécurisé)
+  let h = 0;
+  for(let i=0; i<donnee.length; i++) h = (Math.imul(h,31) + donnee.charCodeAt(i)) | 0;
+  return 'r' + (h>>>0).toString(16);
+}
+
+let roleChoisi = null;
+const essais = {};                // compteur en mémoire, remis à zéro au rechargement
+
+function demanderMdp(role){
+  roleChoisi = role;
+  const u = UTILISATEURS[role];
+  $('#etape-roles').style.display = 'none';
+  $('#etape-mdp').classList.add('on');
+  $('#mdp-ic').textContent   = { ADMIN:'🔑', MANAGER:'📋', PREPARATEUR:'📦' }[role];
+  $('#mdp-role').textContent = role;
+  $('#mdp-qui').textContent  = u.nom;
+  $('#mdp-champ').value = '';
+  $('#mdp-err').textContent = '';
+  $('#mdp-champ').focus();
+}
+function retourRoles(){
+  roleChoisi = null;
+  $('#etape-mdp').classList.remove('on');
+  $('#etape-roles').style.display = '';
+}
+
+async function validerMdp(){
+  if(!roleChoisi) return;
+  const champ = $('#mdp-champ'), err = $('#mdp-err');
+  const e = essais[roleChoisi] || { n:0, bloqueJusqua:0 };
+
+  if(Date.now() < e.bloqueJusqua){
+    err.textContent = `Profil bloqué ${Math.ceil((e.bloqueJusqua-Date.now())/1000)} s après trop d'essais.`;
+    return;
+  }
+  if(!champ.value){ err.textContent = 'Saisissez le mot de passe.'; champ.focus(); return; }
+
+  const attendu = S.motsDePasse[roleChoisi];
+  const propose = await hacher(champ.value, S.sel);
+
+  if(propose === attendu){
+    essais[roleChoisi] = { n:0, bloqueJusqua:0 };
+    const r = roleChoisi;
+    retourRoles();
+    connexion(r);
+    return;
+  }
+
+  e.n++;
+  if(e.n >= MAX_ESSAIS){
+    e.bloqueJusqua = Date.now() + 60000;
+    e.n = 0;
+    err.textContent = `${MAX_ESSAIS} essais manqués : profil bloqué une minute.`;
+    tracer('Connexion refusée', `${roleChoisi} — profil bloqué après ${MAX_ESSAIS} essais`);
+    sauver();
+  } else {
+    err.textContent = `Mot de passe incorrect — ${MAX_ESSAIS - e.n} essai(s) restant(s).`;
+  }
+  essais[roleChoisi] = e;
+  champ.classList.add('faux');
+  setTimeout(()=>champ.classList.remove('faux'), 320);
+  champ.value = ''; champ.focus();
+}
 
 function connexion(role){
   U = UTILISATEURS[role];
@@ -866,6 +984,7 @@ function connexion(role){
 function deconnexion(){
   tracer('Déconnexion', U.nom);
   sauver(); U = null; brouillon = null;
+  fermerNav(); retourRoles();
   $('#app').classList.remove('on');
   $('#login').style.display = 'flex';
 }
@@ -923,6 +1042,8 @@ function ouvrirNav(){
                 <span class="ic">${m.ic}</span><span>${m.txt}</span>${p}</button>`;
     }).join('')}
     <div class="nav-sep"></div>
+    <button class="nav-e" onclick="fermerNav();formMdp('${U.role}')">
+      <span class="ic">🔒</span><span>Changer mon mot de passe</span></button>
     <button class="nav-e" onclick="fermerNav();deconnexion()">
       <span class="ic">🔄</span><span>Changer d'utilisateur</span></button>
     <button class="nav-e" onclick="fermerNav();reinitialiser()">
@@ -934,7 +1055,8 @@ function rendre(){
   rendreMenu(); rendreBarre();
   const f = { tableau:vueTableau, commandes:vueCommandes, catalogue:vueCatalogue,
               preparation:vuePreparation, validations:vueValidations,
-              facturation:vueFacturation, journal:vueJournal, demo:vueDemo }[vueCourante];
+              facturation:vueFacturation, journal:vueJournal,
+              securite:vueSecurite, demo:vueDemo }[vueCourante];
   $('#vue').innerHTML = f ? f() : '';
   window.scrollTo(0,0);
 }
@@ -2304,6 +2426,80 @@ function vueFacturation(){
 }
 
 /* =========================================================================
+   VUE — MOTS DE PASSE (ADMIN)
+   ========================================================================= */
+function vueSecurite(){
+  const desc = { ADMIN:'Valide, arbitre, gère le parc',
+                 MANAGER:'Devis, réservations, facturation',
+                 PREPARATEUR:'Dépôt, départs, retours' };
+  return `
+  <div class="entete">
+    <div><h2>Mots de passe</h2>
+      <div class="sous">Un mot de passe par profil — à changer avant la mise en service</div></div>
+  </div>
+
+  <div class="alerte">Les mots de passe sont conservés sous forme d'<b>empreinte salée</b>,
+    jamais en clair. La vérification se fait sur l'appareil : elle sépare les rôles
+    sur un téléphone partagé, elle ne remplace pas un contrôle côté serveur.</div>
+
+  <div class="carte">
+    ${['ADMIN','MANAGER','PREPARATEUR'].map(r=>{
+      const parDefaut = S.mdpChange && S.mdpChange[r];
+      return `<div class="sel">
+        <div class="sel-tete">
+          <div class="sel-nom">${r} — ${esc(UTILISATEURS[r].nom)}
+            <span class="sel-ref">${esc(desc[r])}</span></div>
+          <button class="btn mini" onclick="formMdp('${r}')">Changer</button>
+        </div>
+        <div class="sel-bas" style="margin-top:8px">
+          <span style="font-size:12.5px;color:${parDefaut?'var(--vert)':'var(--orange)'}">
+            ${parDefaut ? '✓ mot de passe personnalisé'
+                        : "⚠ mot de passe d'origine, jamais modifié"}</span>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function formMdp(role){
+  const soi = (role === U.role);
+  const admin = (U.role === 'ADMIN');
+  modale(`Mot de passe — ${esc(role)}`, `
+    ${soi ? `<div class="champ"><label>Mot de passe actuel</label>
+      <input type="password" id="m-actuel" autocomplete="current-password"></div>` : ''}
+    <div class="champ"><label>Nouveau mot de passe</label>
+      <input type="password" id="m-neuf" autocomplete="new-password"></div>
+    <div class="champ" style="margin-bottom:0"><label>Confirmer</label>
+      <input type="password" id="m-conf" autocomplete="new-password"
+        onkeydown="if(event.key==='Enter')enregistrerMdp('${role}')"></div>
+    ${(!soi && admin) ? `<div class="alerte" style="margin:16px 0 0">
+      Vous modifiez le mot de passe d'un autre profil : pensez à le communiquer
+      à la personne concernée.</div>` : ''}
+  `, `<button class="btn" onclick="fermerModale()">Annuler</button>
+      <button class="btn p" onclick="enregistrerMdp('${role}')">Enregistrer</button>`);
+  setTimeout(()=>{ const p = $(soi ? '#m-actuel' : '#m-neuf'); if(p) p.focus(); }, 60);
+}
+
+async function enregistrerMdp(role){
+  const soi = (role === U.role);
+  const neuf = $('#m-neuf').value, conf = $('#m-conf').value;
+
+  if(soi){
+    const actuel = await hacher($('#m-actuel').value, S.sel);
+    if(actuel !== S.motsDePasse[role]){ toast("Mot de passe actuel incorrect.", 'err'); return; }
+  }
+  if(neuf.length < 4){ toast("Le mot de passe doit faire au moins 4 caractères.", 'err'); return; }
+  if(neuf !== conf){ toast("Les deux saisies ne correspondent pas.", 'err'); return; }
+
+  S.motsDePasse[role] = await hacher(neuf, S.sel);
+  if(!S.mdpChange) S.mdpChange = {};
+  S.mdpChange[role] = true;
+  tracer('Mot de passe modifié', `profil ${role}`);
+  sauver(); fermerModale(); rendre();
+  toast(`Mot de passe du profil ${role} mis à jour.`, 'ok');
+}
+
+/* =========================================================================
    VUE — JOURNAL DE TRACABILITE
    ========================================================================= */
 function vueJournal(){
@@ -2419,8 +2615,30 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   });
 }
 
+/* Pose les mots de passe par défaut la première fois, et rattrape une
+   installation antérieure à leur introduction. */
+async function assurerMotsDePasse(){
+  if(!S.sel) S.sel = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  if(!S.motsDePasse) S.motsDePasse = {};
+  let change = false;
+  for(const r of Object.keys(MDP_DEFAUT)){
+    if(!S.motsDePasse[r]){ S.motsDePasse[r] = await hacher(MDP_DEFAUT[r], S.sel); change = true; }
+  }
+  if(change) sauver();
+}
+
+/* Version publique en ligne : les visiteurs ne peuvent pas deviner les
+   mots de passe, donc on les affiche. Jamais dans la version client. */
+function afficherAideMdp(){
+  $('#mdp-aide').innerHTML = `<div class="aide-mdp">
+    <b>Démonstration publique</b> — mots de passe :<br>
+    ADMIN <b>${MDP_DEFAUT.ADMIN}</b> · MANAGER <b>${MDP_DEFAUT.MANAGER}</b>
+    · PRÉPARATEUR <b>${MDP_DEFAUT.PREPARATEUR}</b></div>`;
+}
+
 /* ---------- Demarrage ---------- */
 if(!charger()) semer();
+assurerMotsDePasse().then(()=>{ if(DEMO_PUBLIQUE) afficherAideMdp(); });
 </script>
 </body>
 </html>
