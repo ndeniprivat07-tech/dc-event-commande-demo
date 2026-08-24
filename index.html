@@ -940,6 +940,7 @@ const MENU = [
   { cle:'facturation', ic:'💰', txt:'Facturation',     roles:['ADMIN','MANAGER'] },
   { cle:'journal',     ic:'🕓', txt:'Traçabilité',     roles:['ADMIN'] },
   { cle:'securite',    ic:'🔒', txt:'Mots de passe',   roles:['ADMIN'] },
+  { cle:'serveur',     ic:'☁️', txt:'Serveur',         roles:['ADMIN'] },
   { cle:'demo',        ic:'🎬', txt:'Scénario démo',   roles:['ADMIN','MANAGER','PREPARATEUR'] }
 ];
 
@@ -1414,7 +1415,7 @@ function rendre(){
   const f = { tableau:vueTableau, commandes:vueCommandes, catalogue:vueCatalogue,
               preparation:vuePreparation, validations:vueValidations,
               facturation:vueFacturation, journal:vueJournal,
-              securite:vueSecurite, demo:vueDemo }[vueCourante];
+              securite:vueSecurite, serveur:vueServeur, demo:vueDemo }[vueCourante];
   $('#vue').innerHTML = f ? f() : '';
   window.scrollTo(0,0);
 }
@@ -3044,6 +3045,148 @@ async function enregistrerMdp(role){
   tracer('Mot de passe modifié', `profil ${role}`);
   sauver(); fermerModale(); rendre();
   toast(`Mot de passe du profil ${role} mis à jour.`, 'ok');
+}
+
+/* =========================================================================
+   VUE — SERVEUR (Supabase)
+   Écran de configuration. Il enregistre l'adresse du projet et la clé
+   publique, et vérifie que le serveur répond. La synchronisation des
+   données n'est pas encore branchée : tant qu'elle ne l'est pas,
+   l'application continue de fonctionner entièrement hors connexion.
+   ========================================================================= */
+function serveurConf(){
+  if(!S.serveur) S.serveur = { url:'', cle:'', testeLe:null, etat:null, detail:'' };
+  return S.serveur;
+}
+
+function vueServeur(){
+  const s = serveurConf();
+  const configure = !!(s.url && s.cle);
+  const cleMasquee = s.cle ? s.cle.slice(0,12) + '…' + s.cle.slice(-6) : '';
+
+  return `
+  <div class="entete">
+    <div><h2>Serveur</h2>
+      <div class="sous">Connexion à Supabase — préparation de la version partagée</div></div>
+  </div>
+
+  <div class="alerte">Aujourd'hui, chaque appareil garde ses propres données :
+    ce que le patron saisit sur son téléphone n'apparaît pas sur celui du dépôt.
+    Un serveur lève cette limite et rend les règles de gestion <b>opposables</b>,
+    car elles sont alors appliquées par la base et non par l'écran.</div>
+
+  <div class="carte" style="margin-bottom:16px">
+    <h3 class="etiq"><span class="etiq-n">1</span>Préparer le projet</h3>
+    <p style="color:var(--txt2);font-size:13.5px;line-height:1.7">
+      Créez un projet sur <b>supabase.com</b>, ouvrez son éditeur SQL et exécutez
+      le fichier <b>supabase-schema.sql</b> fourni avec l'application. Il crée les
+      tables, les droits par rôle et le contrôle des réductions.
+      Relevez ensuite l'adresse et la clé dans <b>Project Settings → API</b>.</p>
+  </div>
+
+  <div class="carte" style="margin-bottom:16px">
+    <h3 class="etiq"><span class="etiq-n">2</span>Renseigner l'accès</h3>
+    <div class="champ"><label>Adresse du projet <i class="req">*</i></label>
+      <input id="sv-url" value="${esc(s.url)}" placeholder="https://xxxxxxxx.supabase.co"
+        autocomplete="off" spellcheck="false"></div>
+    <div class="champ"><label>Clé publique « anon » <i class="req">*</i></label>
+      <input id="sv-cle" value="${esc(s.cle)}" placeholder="eyJhbGciOi…"
+        autocomplete="off" spellcheck="false" style="font-family:monospace;font-size:12.5px">
+      <div class="puce-cat" style="margin-top:5px">Cette clé est prévue pour être
+        publique : elle n'ouvre que ce que les droits de la base autorisent.
+        N'utilisez jamais ici la clé « service_role ».</div></div>
+    <div style="display:flex;gap:9px;flex-wrap:wrap">
+      <button class="btn c" onclick="testerServeur()">Tester la connexion</button>
+      <button class="btn p" onclick="enregistrerServeur()">Enregistrer</button>
+      ${configure ? `<button class="btn r" onclick="oublierServeur()">Oublier cet accès</button>` : ''}
+    </div>
+  </div>
+
+  <div class="carte">
+    <h3 class="etiq"><span class="etiq-n">3</span>État</h3>
+    ${!configure
+      ? `<div class="alerte">Aucun accès enregistré — l'application fonctionne
+           entièrement sur cet appareil.</div>`
+      : `<div class="alerte ${s.etat === 'ok' ? 'v' : (s.etat === 'ko' ? 'r' : '')}">
+           <b>${s.etat === 'ok' ? '✓ Serveur joignable'
+                : s.etat === 'ko' ? '⚠ Serveur injoignable' : 'Accès enregistré, jamais testé'}</b>
+           ${s.detail ? '<br>' + esc(s.detail) : ''}
+           ${s.testeLe ? `<br><span class="puce-cat">dernier test : ${new Date(s.testeLe).toLocaleString('fr-FR')}</span>` : ''}
+         </div>
+         <div style="color:var(--txt2);font-size:13px;line-height:1.7">
+           <div>Projet : <b style="color:var(--txt)">${esc(s.url)}</b></div>
+           <div>Clé : <b style="color:var(--txt);font-family:monospace">${esc(cleMasquee)}</b></div>
+         </div>`}
+    <div class="alerte" style="margin:16px 0 0">
+      <b>La synchronisation n'est pas encore active.</b> Cet écran prépare le
+      raccordement : tant qu'il n'est pas branché, rien ne quitte l'appareil et
+      les données restent celles du navigateur.</div>
+  </div>`;
+}
+
+function lireChampsServeur(){
+  const url = $('#sv-url').value.trim().replace(/\/+$/, '');
+  const cle = $('#sv-cle').value.trim();
+  if(!url || !cle){ toast("Adresse et clé sont obligatoires.", 'err'); return null; }
+  if(!/^https:\/\/[\w.-]+\.supabase\.co$/.test(url)){
+    toast("Adresse attendue : https://votre-projet.supabase.co", 'err'); return null; }
+  if(cle.startsWith('eyJ') && cle.includes('service_role')){
+    toast("C'est la clé service_role : elle donne tous les droits, ne l'utilisez pas ici.", 'err'); return null; }
+  return { url, cle };
+}
+
+function enregistrerServeur(){
+  const v = lireChampsServeur(); if(!v) return;
+  const s = serveurConf();
+  s.url = v.url; s.cle = v.cle;
+  tracer('Accès serveur enregistré', v.url);
+  sauver(); rendre();
+  toast("Accès enregistré. Testez la connexion pour vérifier.", 'ok');
+}
+
+function oublierServeur(){
+  if(!confirm("Effacer l'adresse et la clé du serveur ?\nLes données locales ne sont pas touchées.")) return;
+  S.serveur = { url:'', cle:'', testeLe:null, etat:null, detail:'' };
+  tracer('Accès serveur effacé', '');
+  sauver(); rendre();
+  toast("Accès effacé.", 'ok');
+}
+
+/* Interroge la racine de l'API REST : elle répond sans qu'aucune table
+   n'existe, ce qui teste l'adresse et la clé, pas le schéma. */
+async function testerServeur(){
+  const v = lireChampsServeur(); if(!v) return;
+  const s = serveurConf();
+  s.url = v.url; s.cle = v.cle;
+  toast("Test en cours…");
+  try{
+    const ctrl = new AbortController();
+    const minuteur = setTimeout(()=>ctrl.abort(), 12000);
+    const r = await fetch(v.url + '/rest/v1/', {
+      headers: { apikey: v.cle, Authorization: 'Bearer ' + v.cle },
+      signal: ctrl.signal
+    });
+    clearTimeout(minuteur);
+    if(r.ok){
+      s.etat = 'ok';
+      s.detail = "L'adresse et la clé sont valides.";
+    } else if(r.status === 401 || r.status === 403){
+      s.etat = 'ko';
+      s.detail = "Clé refusée (" + r.status + ") : vérifiez que c'est bien la clé « anon » de ce projet.";
+    } else {
+      s.etat = 'ko';
+      s.detail = "Le serveur a répondu " + r.status + ".";
+    }
+  }catch(e){
+    s.etat = 'ko';
+    s.detail = (e.name === 'AbortError')
+      ? "Pas de réponse en 12 secondes : vérifiez la connexion internet ou l'adresse."
+      : "Serveur injoignable : adresse incorrecte, projet en pause, ou appareil hors ligne.";
+  }
+  s.testeLe = new Date().toISOString();
+  tracer('Test du serveur', s.etat === 'ok' ? 'joignable' : 'échec — ' + s.detail);
+  sauver(); rendre();
+  toast(s.etat === 'ok' ? "Serveur joignable." : "Échec du test.", s.etat === 'ok' ? 'ok' : 'err');
 }
 
 /* =========================================================================
