@@ -77,6 +77,18 @@ a{color:var(--cyan)}
 .aide-mdp{border:1px dashed var(--bord-clair);border-radius:10px;padding:12px 15px;
   font-size:12px;color:var(--txt2);line-height:1.7;text-align:left}
 .aide-mdp b{color:var(--txt);font-family:monospace;letter-spacing:.5px}
+.code-secours{font-family:monospace;font-size:26px;font-weight:700;letter-spacing:3px;
+  text-align:center;padding:18px 10px;margin:16px 0;border-radius:12px;
+  background:#0a0a16;border:1px dashed var(--rose);color:var(--rose-clair);
+  user-select:all;word-break:break-all}
+.bio{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
+  padding:13px;margin-bottom:14px;border-radius:10px;font-size:14.5px;font-weight:600;
+  background:linear-gradient(135deg,var(--cyan),var(--bleu));color:#04121c}
+.bio:active{filter:brightness(.92)}
+.bio .ic{font-size:19px}
+.ou{display:flex;align-items:center;gap:10px;color:var(--txt3);font-size:11.5px;
+  letter-spacing:1.5px;margin-bottom:12px}
+.ou::before,.ou::after{content:'';flex:1;height:1px;background:var(--bord)}
 .role .nom{display:block;font-weight:700;letter-spacing:1.5px;margin-bottom:7px}
 .role .desc{display:block;font-size:12px;color:var(--txt2);line-height:1.5}
 
@@ -497,11 +509,13 @@ th.num{text-align:right}
     <div class="mdp-ic" id="mdp-ic">🔑</div>
     <div class="mdp-role" id="mdp-role">ADMIN</div>
     <div class="mdp-qui" id="mdp-qui">M. Bamba</div>
+    <div id="mdp-bio"></div>
     <input type="password" id="mdp-champ" placeholder="Mot de passe" autocomplete="current-password"
       onkeydown="if(event.key==='Enter')validerMdp();if(event.key==='Escape')retourRoles()">
     <div class="mdp-err" id="mdp-err"></div>
     <button class="btn p" style="width:100%" id="mdp-ok" onclick="validerMdp()">Se connecter</button>
     <button class="btn" style="width:100%;margin-top:9px" onclick="retourRoles()">← Choisir un autre profil</button>
+    <div id="mdp-oubli"></div>
   </div>
 
   <div id="mdp-aide"></div>
@@ -911,6 +925,160 @@ async function hacher(txt, sel){
   return 'r' + (h>>>0).toString(16);
 }
 
+/* ---------- Code de secours ----------
+   Seul recours si l'ADMIN oublie son mot de passe : sans lui, il faudrait
+   effacer toutes les données. Comme les mots de passe, seule son empreinte
+   est conservée — le code lui-même n'existe que sur le papier de l'ADMIN. */
+const ALPHABET_CODE = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // sans O/0, I/1, L
+
+function genererCode(){
+  const n = new Uint32Array(12);
+  if(window.crypto && crypto.getRandomValues) crypto.getRandomValues(n);
+  else for(let i=0;i<12;i++) n[i] = Math.floor(Math.random()*4294967295);
+  let s = '';
+  for(let i=0;i<12;i++){
+    s += ALPHABET_CODE[n[i] % ALPHABET_CODE.length];
+    if(i % 4 === 3 && i < 11) s += '-';
+  }
+  return s;
+}
+
+async function genererCodeSecours(){
+  const code = genererCode();
+  S.codeSecours = await hacher(code, S.sel);
+  S.codeSecoursLe = auj().toISOString().slice(0,10);
+  tracer('Code de secours généré', 'ancien code invalidé');
+  sauver();
+  modale('Code de secours', `
+    <div class="alerte r">Notez ce code <b>maintenant</b>, sur papier, et rangez-le
+      hors de l'appareil. Il ne sera plus jamais affiché : seule son empreinte
+      est conservée.</div>
+    <div class="code-secours">${esc(code)}</div>
+    <div style="color:var(--txt2);font-size:13px;line-height:1.6">
+      Il permet de redéfinir le mot de passe ADMIN sans toucher aux données.
+      Il ne sert qu'<b>une seule fois</b> : après usage, il faudra en générer
+      un nouveau. Toute génération annule le précédent.</div>
+  `, `<button class="btn p" onclick="fermerModale();rendre()">J'ai noté le code</button>`);
+}
+
+/* Récupération : accessible depuis l'écran de connexion du profil ADMIN. */
+function oublieMdp(){
+  modale('Mot de passe ADMIN oublié', `
+    <div class="alerte">Saisissez le code de secours noté lors de la configuration,
+      puis choisissez un nouveau mot de passe. Les données ne sont pas touchées.</div>
+    <div class="champ"><label>Code de secours</label>
+      <input id="r-code" placeholder="XXXX-XXXX-XXXX" autocomplete="off"
+        style="text-transform:uppercase;letter-spacing:1.5px"></div>
+    <div class="champ"><label>Nouveau mot de passe ADMIN</label>
+      <input type="password" id="r-neuf" autocomplete="new-password"></div>
+    <div class="champ" style="margin-bottom:0"><label>Confirmer</label>
+      <input type="password" id="r-conf" autocomplete="new-password"
+        onkeydown="if(event.key==='Enter')validerRecuperation()"></div>
+  `, `<button class="btn" onclick="fermerModale()">Annuler</button>
+      <button class="btn p" onclick="validerRecuperation()">Redéfinir le mot de passe</button>`);
+  setTimeout(()=>$('#r-code').focus(), 60);
+}
+
+async function validerRecuperation(){
+  const code = $('#r-code').value.trim().toUpperCase();
+  const neuf = $('#r-neuf').value, conf = $('#r-conf').value;
+  if(!S.codeSecours){ toast("Aucun code de secours n'a été défini sur cet appareil.", 'err'); return; }
+  if(await hacher(code, S.sel) !== S.codeSecours){
+    tracer('Récupération refusée', 'code de secours incorrect');
+    sauver(); toast("Code de secours incorrect.", 'err'); return;
+  }
+  if(neuf.length < 4){ toast("Le mot de passe doit faire au moins 4 caractères.", 'err'); return; }
+  if(neuf !== conf){ toast("Les deux saisies ne correspondent pas.", 'err'); return; }
+
+  S.motsDePasse.ADMIN = await hacher(neuf, S.sel);
+  if(!S.mdpChange) S.mdpChange = {};
+  S.mdpChange.ADMIN = true;
+  S.codeSecours = null;              // à usage unique
+  essais.ADMIN = { n:0, bloqueJusqua:0 };
+  tracer('Mot de passe ADMIN redéfini', 'via code de secours — code consommé');
+  sauver(); fermerModale(); retourRoles();
+  toast("Mot de passe ADMIN redéfini. Générez un nouveau code de secours.", 'ok');
+}
+
+/* =========================================================================
+   DÉVERROUILLAGE PAR EMPREINTE (WebAuthn)
+   Utilise le capteur du téléphone via l'authentificateur intégré. Sans
+   serveur, la signature n'est pas vérifiée à distance : c'est un verrou
+   local, de force équivalente au mot de passe qu'il remplace, pas une
+   authentification opposable. Le mot de passe reste toujours accepté.
+   ========================================================================= */
+const b64 = {
+  vers: buf => btoa(String.fromCharCode(...new Uint8Array(buf))),
+  depuis: s => Uint8Array.from(atob(s), c => c.charCodeAt(0))
+};
+function alea(n){
+  const t = new Uint8Array(n);
+  if(window.crypto && crypto.getRandomValues) crypto.getRandomValues(t);
+  else for(let i=0;i<n;i++) t[i] = Math.floor(Math.random()*256);
+  return t;
+}
+
+async function empreinteDispo(){
+  try{
+    if(!window.PublicKeyCredential) return false;
+    if(!location.protocol.startsWith('http')) return false;   // exige une origine sûre
+    return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+  }catch(e){ return false; }
+}
+
+async function activerEmpreinte(role){
+  if(!await empreinteDispo()){
+    toast("Cet appareil ne propose pas de déverrouillage biométrique.", 'err'); return; }
+  try{
+    const cred = await navigator.credentials.create({ publicKey:{
+      challenge: alea(32),
+      rp: { name: 'DC EVENT COMMANDE' },
+      user: { id: new TextEncoder().encode(role), name: role,
+              displayName: UTILISATEURS[role].nom },
+      pubKeyCredParams: [{type:'public-key', alg:-7}, {type:'public-key', alg:-257}],
+      authenticatorSelection: { authenticatorAttachment:'platform', userVerification:'required' },
+      timeout: 60000, attestation: 'none'
+    }});
+    if(!cred) throw new Error('annulé');
+    if(!S.biometrie) S.biometrie = {};
+    S.biometrie[role] = b64.vers(cred.rawId);
+    tracer('Empreinte activée', `profil ${role}`);
+    sauver(); fermerModale(); rendre();
+    toast(`Déverrouillage par empreinte activé pour ${role}.`, 'ok');
+  }catch(e){
+    toast("Activation abandonnée ou refusée par l'appareil.", 'err');
+  }
+}
+
+function desactiverEmpreinte(role){
+  if(S.biometrie) delete S.biometrie[role];
+  tracer('Empreinte désactivée', `profil ${role}`);
+  sauver(); rendre();
+  toast(`Empreinte désactivée pour ${role}. Le mot de passe reste actif.`, 'ok');
+}
+
+async function connexionEmpreinte(role){
+  const id = S.biometrie && S.biometrie[role];
+  if(!id) return;
+  const err = $('#mdp-err');
+  err.textContent = '';
+  try{
+    const ok = await navigator.credentials.get({ publicKey:{
+      challenge: alea(32),
+      allowCredentials: [{ type:'public-key', id: b64.depuis(id) }],
+      userVerification: 'required', timeout: 60000
+    }});
+    if(!ok) throw new Error('annulé');
+    const r = roleChoisi;
+    retourRoles();
+    connexion(r);
+    tracer('Connexion par empreinte', UTILISATEURS[r].nom);
+    sauver();
+  }catch(e){
+    err.textContent = "Empreinte non reconnue — utilisez le mot de passe.";
+  }
+}
+
 let roleChoisi = null;
 const essais = {};                // compteur en mémoire, remis à zéro au rechargement
 
@@ -924,7 +1092,20 @@ function demanderMdp(role){
   $('#mdp-qui').textContent  = u.nom;
   $('#mdp-champ').value = '';
   $('#mdp-err').textContent = '';
-  $('#mdp-champ').focus();
+
+  // Empreinte : proposée seulement si elle a été activée pour ce profil
+  const bio = S.biometrie && S.biometrie[role];
+  $('#mdp-bio').innerHTML = bio
+    ? `<button class="bio" onclick="connexionEmpreinte('${role}')">
+         <span class="ic">👆</span>Déverrouiller avec l'empreinte</button>
+       <div class="ou">OU MOT DE PASSE</div>` : '';
+
+  // Récupération : réservée à l'ADMIN, et seulement si un code existe
+  $('#mdp-oubli').innerHTML = (role === 'ADMIN' && S.codeSecours)
+    ? `<button class="btn mini" style="width:100%;margin-top:14px;color:var(--txt3)"
+         onclick="oublieMdp()">Mot de passe oublié ?</button>` : '';
+
+  if(!bio) $('#mdp-champ').focus();
 }
 function retourRoles(){
   roleChoisi = null;
@@ -1044,6 +1225,11 @@ function ouvrirNav(){
     <div class="nav-sep"></div>
     <button class="nav-e" onclick="fermerNav();formMdp('${U.role}')">
       <span class="ic">🔒</span><span>Changer mon mot de passe</span></button>
+    ${(S.biometrie && S.biometrie[U.role])
+      ? `<button class="nav-e" onclick="fermerNav();desactiverEmpreinte('${U.role}')">
+           <span class="ic">👆</span><span>Désactiver mon empreinte</span></button>`
+      : `<button class="nav-e" onclick="fermerNav();activerEmpreinte('${U.role}')">
+           <span class="ic">👆</span><span>Activer mon empreinte</span></button>`}
     <button class="nav-e" onclick="fermerNav();deconnexion()">
       <span class="ic">🔄</span><span>Changer d'utilisateur</span></button>
     <button class="nav-e" onclick="fermerNav();reinitialiser()">
@@ -2442,22 +2628,47 @@ function vueSecurite(){
     jamais en clair. La vérification se fait sur l'appareil : elle sépare les rôles
     sur un téléphone partagé, elle ne remplace pas un contrôle côté serveur.</div>
 
-  <div class="carte">
+  <div class="carte" style="margin-bottom:16px">
     ${['ADMIN','MANAGER','PREPARATEUR'].map(r=>{
-      const parDefaut = S.mdpChange && S.mdpChange[r];
+      const perso = S.mdpChange && S.mdpChange[r];
+      const bio = S.biometrie && S.biometrie[r];
       return `<div class="sel">
         <div class="sel-tete">
           <div class="sel-nom">${r} — ${esc(UTILISATEURS[r].nom)}
             <span class="sel-ref">${esc(desc[r])}</span></div>
           <button class="btn mini" onclick="formMdp('${r}')">Changer</button>
         </div>
-        <div class="sel-bas" style="margin-top:8px">
-          <span style="font-size:12.5px;color:${parDefaut?'var(--vert)':'var(--orange)'}">
-            ${parDefaut ? '✓ mot de passe personnalisé'
-                        : "⚠ mot de passe d'origine, jamais modifié"}</span>
+        <div class="sel-bas" style="margin-top:8px;flex-wrap:wrap;gap:8px">
+          <span style="font-size:12.5px;color:${perso?'var(--vert)':'var(--orange)'}">
+            ${perso ? '✓ mot de passe personnalisé'
+                    : "⚠ mot de passe d'origine, jamais modifié"}</span>
+          ${bio
+            ? `<button class="btn mini" onclick="desactiverEmpreinte('${r}')">
+                 👆 empreinte active — désactiver</button>`
+            : (r === U.role
+                ? `<button class="btn mini c" onclick="activerEmpreinte('${r}')">
+                     👆 Activer l'empreinte</button>`
+                : `<span style="font-size:12px;color:var(--txt3)">
+                     empreinte à activer depuis ce profil</span>`)}
         </div>
       </div>`;
     }).join('')}
+  </div>
+
+  <div class="carte">
+    <h3 style="font-size:15px;margin-bottom:6px">Code de secours</h3>
+    <p style="color:var(--txt2);font-size:13px;line-height:1.6;margin-bottom:14px">
+      Seul recours si le mot de passe ADMIN est perdu. Sans lui, il faudrait
+      effacer toutes les données pour reprendre la main.</p>
+    ${S.codeSecours
+      ? `<div class="alerte v" style="margin-bottom:14px">✓ Un code est actif,
+           généré le ${frDate(S.codeSecoursLe)}. Vous devez l'avoir noté sur papier :
+           il n'est plus affichable.</div>`
+      : `<div class="alerte r" style="margin-bottom:14px">⚠ Aucun code actif.
+           Si le mot de passe ADMIN est oublié, la seule issue sera d'effacer
+           toutes les données.</div>`}
+    <button class="btn ${S.codeSecours?'':'p'}" onclick="genererCodeSecours()">
+      ${S.codeSecours ? 'Générer un nouveau code (annule le précédent)' : 'Générer un code de secours'}</button>
   </div>`;
 }
 
