@@ -150,6 +150,20 @@ main{padding:26px 30px 60px;max-width:1500px}
 .sel-tot{text-align:right;font-weight:700;font-size:15px;white-space:nowrap}
 .sel-det{display:block;font-size:11px;color:var(--txt3);font-weight:400;margin-top:2px}
 
+/* Champs obligatoires */
+.req{color:var(--rose);font-style:normal;font-weight:700;margin-left:1px}
+.legende-req{color:var(--txt3);font-size:11.5px;margin-top:12px}
+.legende-req .req{margin-right:3px}
+
+/* Réduction : saisie en pourcentage ou en francs */
+.duo{display:flex;gap:9px;align-items:stretch}
+.duo input{flex:1;min-width:0}
+.bascule{display:flex;flex:0 0 auto;border:1px solid var(--bord);border-radius:8px;overflow:hidden}
+.bascule button{padding:0 13px;font-size:12.5px;font-weight:600;color:var(--txt3);
+  background:#0a0a16;transition:.14s;white-space:nowrap}
+.bascule button:hover{color:var(--txt)}
+.bascule button.on{background:linear-gradient(135deg,var(--rose),#c026d3);color:#fff}
+
 /* Photos du catalogue */
 .vignette{width:42px;height:42px;flex:0 0 auto;border-radius:8px;object-fit:cover;
   background:#0a0a16;border:1px solid var(--bord)}
@@ -600,7 +614,6 @@ const DEMO_PUBLIQUE = true;      // mis à true dans la version publique en lign
 const MDP_DEFAUT = { ADMIN:'dc-admin', MANAGER:'dc-manager', PREPARATEUR:'dc-depot' };
 const MAX_ESSAIS = 5;             // au-delà, le profil se bloque une minute
 const SEUIL_REMISE = 10;          // % au-dela duquel l'ADMIN doit valider
-const TVA_DEFAUT   = 18;          // taux en vigueur en Côte d'Ivoire
 let S = null;                      // etat complet de l'application
 let U = null;                      // utilisateur connecte
 let vueCourante = 'tableau';
@@ -614,6 +627,8 @@ function frDate(iso){ if(!iso) return '—';
   const [a,m,j] = iso.split('-'); return `${j}/${m}/${a}`; }
 function frCourt(iso){ const [a,m,j] = iso.split('-'); return `${j}/${m}`; }
 function fcfa(n){ return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,' ') + ' F'; }
+/* Taux réel arrondi au dixième, sans décimale inutile : 5 % et non 5,0 % */
+function pct(n){ const v = Math.round(n*10)/10; return (v % 1 ? v.toFixed(1).replace('.',',') : v) + ' %'; }
 function nbJours(d1,d2){ return Math.max(1, Math.round((new Date(d2)-new Date(d1))/864e5)+1); }
 function chevauche(a1,a2,b1,b2){ return a1 <= b2 && b1 <= a2; }
 function esc(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -668,7 +683,7 @@ function semer(){
       tel:'07 00 00 00 01', mail:'demo@dc-event.example', ville:'Abidjan, Côte d\'Ivoire',
       // À REMPLACER par les mentions légales réelles avant tout usage commercial
       rccm:'RCCM CI-ABJ-XXXX-X-XXXXX', cc:'Compte contribuable : XXXXXXXX',
-      tva:TVA_DEFAUT, delaiReglement:30
+      delaiReglement:30
     },
     articles:[
       art('SON-01','Enceinte active 15" 800W','Sonorisation',12,25000,450000),
@@ -712,7 +727,7 @@ function semer(){
       num: 'CMD-2026-' + String(S.compteur.cmd).padStart(3,'0'),
       creeeLe: new Date().toISOString(), creeePar:'Konan (Manager)',
       remise:0, escompte:0, transport:0, transportNote:'', caution:0, acompte:0,
-      tva:TVA_DEFAUT, facture:null, retour:null, notes:''
+      facture:null, retour:null, notes:''
     }, o);
     S.commandes.push(c); return c;
   }
@@ -786,52 +801,57 @@ function dispo(articleId, d1, d2, saufCmdId){
 
 /* =========================================================================
    CALCULS FINANCIERS — cascade normalisée d'une facture
-     Brut HT
-       − remise commerciale      (geste sur le prix)
+     Total location
+       − remise commerciale      (geste sur le prix, en % ou en francs)
      = net commercial
        − escompte                (geste pour paiement anticipé)
-     = net financier HT
-       + TVA
-     = total TTC
-       + caution                 (consignée, remboursable, hors TVA et hors CA)
+     = net financier
+       + transport               (hors réductions : le camion ne se remise pas)
+     = total
+       + caution                 (consignée, remboursable, hors chiffre d'affaires)
      = total à encaisser
        − déjà réglé
      = net à payer
    ========================================================================= */
+/* Une réduction se saisit indifféremment en pourcentage ou en montant.
+   On conserve le mode choisi pour éviter les arrondis d'aller-retour :
+   50 000 F saisis restent 50 000 F, et non 8,44 % recalculés à 49 998 F. */
+function reduction(valeur, mode, base){
+  if(!valeur) return 0;
+  return mode === 'montant' ? Math.min(valeur, base) : base * valeur / 100;
+}
+
 function totalCommande(c){
   const j = nbJours(c.debut, c.fin);
   const brut = c.lignes.reduce((s,l)=>s + l.qte * l.prix * j, 0);
 
-  const tauxRemise   = c.remise   || 0;
-  const tauxEscompte = c.escompte || 0;
-  const tauxTva      = (c.tva === undefined ? S.societe.tva : c.tva);
-
-  const remise   = brut * tauxRemise / 100;
+  const remise   = reduction(c.remise,   c.remiseMode,   brut);
   const netCom   = brut - remise;
-  const escompte = netCom * tauxEscompte / 100;
+  const escompte = reduction(c.escompte, c.escompteMode, netCom);
   const netFin   = netCom - escompte;
 
   // Le transport s'ajoute APRÈS les réductions : une remise se négocie sur la
   // location, pas sur le carburant et le camion.
   const transport = c.transport || 0;
-  const totalHT   = netFin + transport;
+  const total     = netFin + transport;
+  const caution   = c.caution || 0;
 
-  const tva      = totalHT * tauxTva / 100;
-  const ttc      = totalHT + tva;
-  const caution  = c.caution || 0;
+  // Taux réels, pour l'affichage et pour la règle de validation
+  const tauxRemise   = brut   ? remise   / brut   * 100 : 0;
+  const tauxEscompte = netCom ? escompte / netCom * 100 : 0;
 
   // Retenues pour casse et matériel non restitué, imputées sur la caution.
-  // Ce sont des indemnités, pas une vente : elles ne portent pas la TVA.
+  // Ce sont des indemnités, imputées sur la caution.
   const retenue = (c.retenues||[]).reduce((s,x)=>s+x.montant, 0);
   const cautionRendue = Math.max(0, caution - retenue);
   const excedent      = Math.max(0, retenue - caution);
 
   return { jours:j, brut, tauxRemise, remise, netCom, tauxEscompte, escompte,
-           netFin, transport, totalHT, tauxTva, tva, ttc, caution,
+           netFin, transport, total, caution,
            retenue, cautionRendue, excedent,
-           aEncaisser: ttc + caution,     // avant retour : location + consigne
-           duFinal: ttc + retenue,        // après retour : location + dégâts
-           net: ttc };            // « net » = chiffre d'affaires, caution exclue
+           aEncaisser: total + caution,   // avant retour : location + consigne
+           duFinal: total + retenue,      // après retour : location + dégâts
+           net: total };          // « net » = chiffre d'affaires, caution exclue
 }
 function encaisse(cmdId){
   return S.paiements.filter(p=>p.commandeId===cmdId).reduce((s,p)=>s+p.montant,0);
@@ -850,8 +870,13 @@ function incidents(c){
           ...c.retour.manquant.map(x=>Object.assign({type:'MANQUANT'},x))];
 }
 
-/* Réduction totale consentie au client : c'est elle qui déclenche l'ADMIN. */
-function reductionTotale(c){ return (c.remise||0) + (c.escompte||0); }
+/* Réduction totale consentie, en pourcentage réel du brut : c'est elle qui
+   déclenche l'ADMIN. Calculée sur les montants, donc insensible au mode de
+   saisie — impossible de contourner le seuil en passant en francs. */
+function reductionTotale(c){
+  const t = totalCommande(c);
+  return t.brut ? Math.round((t.remise + t.escompte) / t.brut * 1000) / 10 : 0;
+}
 
 /* =========================================================================
    REGLE DE VALIDATION — le coeur du cahier des charges
@@ -1024,12 +1049,12 @@ function oublieMdp(){
   modale('Mot de passe ADMIN oublié', `
     <div class="alerte">Saisissez le code de secours noté lors de la configuration,
       puis choisissez un nouveau mot de passe. Les données ne sont pas touchées.</div>
-    <div class="champ"><label>Code de secours</label>
+    <div class="champ"><label>Code de secours <i class="req">*</i></label>
       <input id="r-code" placeholder="XXXX-XXXX-XXXX" autocomplete="off"
         style="text-transform:uppercase;letter-spacing:1.5px"></div>
-    <div class="champ"><label>Nouveau mot de passe ADMIN</label>
+    <div class="champ"><label>Nouveau mot de passe ADMIN <i class="req">*</i></label>
       <input type="password" id="r-neuf" autocomplete="new-password"></div>
-    <div class="champ" style="margin-bottom:0"><label>Confirmer</label>
+    <div class="champ" style="margin-bottom:0"><label>Confirmer <i class="req">*</i></label>
       <input type="password" id="r-conf" autocomplete="new-password"
         onkeydown="if(event.key==='Enter')validerRecuperation()"></div>
   `, `<button class="btn" onclick="fermerModale()">Annuler</button>
@@ -1503,7 +1528,7 @@ function vueCatalogue(){
         <input type="date" value="${catD1}" onchange="catD1=this.value;rendre()"></div>
       <div class="champ" style="margin:0"><label>Au</label>
         <input type="date" value="${catD2}" onchange="catD2=this.value;rendre()"></div>
-      <div class="champ" style="margin:0;min-width:190px"><label>Catégorie</label>
+      <div class="champ" style="margin:0;min-width:190px"><label>Catégorie <i class="req">*</i></label>
         <select onchange="catFiltre=this.value;rendre()">
           <option value="">Toutes</option>
           ${cats.map(c=>`<option ${catFiltre===c?'selected':''}>${esc(c)}</option>`).join('')}
@@ -1637,19 +1662,19 @@ function formArticle(id){
   const cats = [...new Set(S.articles.map(x=>x.cat))];
   modale(a ? `Modifier — ${esc(a.nom)}` : 'Nouvel article', `
     <div class="paire">
-      <div class="champ"><label>Référence</label>
+      <div class="champ"><label>Référence <i class="req">*</i></label>
         <input id="a-ref" value="${esc(a?a.ref:'')}" placeholder="SON-05" ${a?'disabled':''}>
         ${a?'<div class="puce-cat" style="margin-top:5px">La référence ne se modifie pas : elle est citée sur les commandes déjà passées.</div>':''}</div>
-      <div class="champ"><label>Catégorie</label>
+      <div class="champ"><label>Catégorie <i class="req">*</i></label>
         <input id="a-cat" value="${esc(a?a.cat:'')}" list="l-cats" placeholder="Sonorisation">
         <datalist id="l-cats">${cats.map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div>
     </div>
-    <div class="champ"><label>Désignation</label>
+    <div class="champ"><label>Désignation <i class="req">*</i></label>
       <input id="a-nom" value="${esc(a?a.nom:'')}" placeholder="Enceinte active 15\\" 800W"></div>
     <div class="paire">
-      <div class="champ"><label>Quantité au parc</label>
+      <div class="champ"><label>Quantité au parc <i class="req">*</i></label>
         <input id="a-qte" type="number" min="0" value="${a?a.qte:1}"></div>
-      <div class="champ"><label>Prix de location par jour (F CFA)</label>
+      <div class="champ"><label>Prix de location par jour (F CFA) <i class="req">*</i></label>
         <input id="a-prix" type="number" min="0" step="500" value="${a?a.prix:0}"></div>
     </div>
     <div class="champ"><label>Valeur de remplacement à neuf (F CFA)</label>
@@ -1750,7 +1775,7 @@ function importerArticles(){
         Référence ; Désignation ; Catégorie ; Quantité ; Prix par jour ; Valeur à neuf</div>
       La <b>valeur à neuf</b> est facultative — elle sert au calcul des retenues sur
       caution. Une référence déjà connue est <b>mise à jour</b> au lieu d'être dupliquée.</div>
-    <div class="champ"><label>Lignes à importer</label>
+    <div class="champ"><label>Lignes à importer <i class="req">*</i></label>
       <textarea id="imp" style="min-height:200px;font-family:monospace;font-size:12.5px"
 placeholder="SON-05 ; Enceinte colonne 1000W ; Sonorisation ; 6 ; 30000
 MOB-06 ; Table cocktail haute ; Mobilier ; 25 ; 5000"></textarea></div>
@@ -1851,7 +1876,7 @@ function vueCommandes(){
 function nouvelleCommande(){
   brouillon = { etape:1, client:'', tel:'', lieu:'', debut:jour(3), fin:jour(4), lignes:[],
                 remise:0, escompte:0, transport:0, transportNote:'', caution:0,
-                acompte:0, encaisserAcompte:true, tva:S.societe.tva };
+                acompte:0, encaisserAcompte:true };
   rechArt = { q:'', cat:'' };
   vueCourante = 'commandes'; rendre();
 }
@@ -2038,7 +2063,7 @@ function vueSaisie1(){
       <div class="carte" style="margin-bottom:16px">
         <h3 class="etiq"><span class="etiq-n">1</span>Client et dates</h3>
         <div class="paire">
-          <div class="champ"><label>Client</label>
+          <div class="champ"><label>Client <i class="req">*</i></label>
             <input value="${esc(b.client)}" placeholder="Nom du client ou de l'événement"
               onchange="majBrouillon('client',this.value)"></div>
           <div class="champ"><label>Téléphone</label>
@@ -2049,15 +2074,16 @@ function vueSaisie1(){
           <input value="${esc(b.lieu)}" placeholder="Quartier, salle…"
             onchange="majBrouillon('lieu',this.value)"></div>
         <div class="paire">
-          <div class="champ"><label>Date de l'événement</label>
+          <div class="champ"><label>Date de l'événement <i class="req">*</i></label>
             <input type="date" value="${b.debut}" onchange="majBrouillon('debut',this.value)">
             <div class="puce-cat" style="margin-top:5px">Jour où le matériel doit être sur place</div></div>
-          <div class="champ"><label>Date de récupération</label>
+          <div class="champ"><label>Date de récupération <i class="req">*</i></label>
             <input type="date" value="${b.fin}" min="${b.debut}" onchange="majBrouillon('fin',this.value)">
             <div class="puce-cat" style="margin-top:5px">Jour où il revient au dépôt</div></div>
         </div>
         <div style="color:var(--txt2);font-size:13px">Durée facturée : <b>${t.jours} jour(s)</b>
           — le matériel est immobilisé de l'événement à la récupération</div>
+        <div class="legende-req"><i class="req">*</i>champs obligatoires</div>
       </div>
 
       <div class="carte" style="margin-bottom:16px">
@@ -2118,15 +2144,52 @@ function vueSaisie1(){
 /* =========================================================================
    ÉTAPE 2 — conditions financières et aperçu de la facture
    ========================================================================= */
+/* Saisie d'une réduction : au choix en pourcentage ou en francs.
+   Le mode retenu est mémorisé, et l'équivalent dans l'autre unité est
+   affiché sous le champ pour lever toute ambiguïté. */
+function champReduction(cle, titre, aide, b, base){
+  const mode = b[cle + 'Mode'] || 'pct';
+  const val  = b[cle] || 0;
+  const montant = reduction(val, mode, base);
+  const taux    = base ? montant / base * 100 : 0;
+  return `
+    <div class="champ">
+      <label>${titre}</label>
+      <div class="duo">
+        <input type="number" min="0" step="${mode==='montant'?'5000':'0.5'}" value="${val}"
+          onchange="majFinance('${cle}',this.value)">
+        <div class="bascule">
+          <button class="${mode==='pct'?'on':''}" onclick="modeReduction('${cle}','pct')">%</button>
+          <button class="${mode==='montant'?'on':''}" onclick="modeReduction('${cle}','montant')">F CFA</button>
+        </div>
+      </div>
+      <div class="puce-cat" style="margin-top:6px">${esc(aide)}${
+        montant ? ` — soit <b style="color:var(--orange)">${mode==='pct' ? fcfa(montant) : pct(taux)}</b>` : ''}</div>
+    </div>`;
+}
+function modeReduction(cle, mode){
+  const b = brouillon;
+  if((b[cle+'Mode'] || 'pct') === mode) return;
+  // On convertit la valeur pour que le montant reste le même à la bascule
+  const base = cle === 'remise' ? totalCommande(b).brut : totalCommande(b).netCom;
+  const montant = reduction(b[cle] || 0, b[cle+'Mode'] || 'pct', base);
+  b[cle+'Mode'] = mode;
+  b[cle] = mode === 'montant' ? Math.round(montant)
+                              : (base ? Math.round(montant / base * 1000) / 10 : 0);
+  rendre();
+}
+
 function majFinance(champ, val){
-  const n = parseFloat(String(val).replace(',','.')) || 0;
-  brouillon[champ] = Math.max(0, n);
-  if(champ === 'remise' || champ === 'escompte') brouillon[champ] = Math.min(100, brouillon[champ]);
+  const n = Math.max(0, parseFloat(String(val).replace(',','.')) || 0);
+  // Un pourcentage se plafonne à 100 ; un montant, non — il sera borné à la base.
+  const enPct = (champ === 'remise' || champ === 'escompte')
+                && (brouillon[champ + 'Mode'] || 'pct') === 'pct';
+  brouillon[champ] = enPct ? Math.min(100, n) : n;
   rendre();
 }
 function acomptePct(p){
   const t = totalCommande(brouillon);
-  brouillon.acompte = Math.round(t.ttc * p / 100);
+  brouillon.acompte = Math.round(t.total * p / 100);
   rendre();
 }
 
@@ -2149,16 +2212,8 @@ function vueSaisie2(){
     <div>
       <div class="carte" style="margin-bottom:16px">
         <h3 style="font-size:15px;margin-bottom:14px">Réductions accordées</h3>
-        <div class="paire">
-          <div class="champ"><label>Remise commerciale (%)</label>
-            <input type="number" min="0" max="100" step="0.5" value="${b.remise}"
-              onchange="majFinance('remise',this.value)">
-            <div class="puce-cat" style="margin-top:5px">Geste sur le prix de location</div></div>
-          <div class="champ"><label>Escompte (%)</label>
-            <input type="number" min="0" max="100" step="0.5" value="${b.escompte}"
-              onchange="majFinance('escompte',this.value)">
-            <div class="puce-cat" style="margin-top:5px">Geste pour paiement anticipé</div></div>
-        </div>
+        ${champReduction('remise', 'Remise commerciale', 'Geste sur le prix de location', b, t.brut)}
+        ${champReduction('escompte', 'Escompte', 'Geste pour paiement anticipé', b, t.netCom)}
         ${depasse ? `<div class="alerte r" style="margin-bottom:0">
           <b>Réduction totale : ${red} %</b> — au-delà du seuil de ${SEUIL_REMISE} %.
           ${U.role==='ADMIN'
@@ -2175,7 +2230,7 @@ function vueSaisie2(){
           <input type="number" min="0" step="5000" value="${b.acompte}"
             onchange="majFinance('acompte',this.value)">
           <div style="display:flex;gap:7px;margin-top:9px;flex-wrap:wrap">
-            ${[30,50,70,100].map(p=>`<button class="btn mini" onclick="acomptePct(${p})">${p} % du TTC</button>`).join('')}
+            ${[30,50,70,100].map(p=>`<button class="btn mini" onclick="acomptePct(${p})">${p} % du total</button>`).join('')}
             <button class="btn mini" onclick="majFinance('acompte',0)">Aucun</button>
           </div></div>
         <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer;
@@ -2204,17 +2259,12 @@ function vueSaisie2(){
       </div>
 
       <div class="carte">
-        <h3 style="font-size:15px;margin-bottom:14px">Caution et taxe</h3>
-        <div class="paire">
-          <div class="champ"><label>Caution consignée (F CFA)</label>
-            <input type="number" min="0" step="5000" value="${b.caution}"
-              onchange="majFinance('caution',this.value)">
-            <div class="puce-cat" style="margin-top:5px">Remboursable au retour, hors TVA et hors chiffre d'affaires</div></div>
-          <div class="champ"><label>TVA (%)</label>
-            <input type="number" min="0" max="100" step="0.5" value="${b.tva}"
-              onchange="majFinance('tva',this.value)">
-            <div class="puce-cat" style="margin-top:5px">18 % en Côte d'Ivoire</div></div>
-        </div>
+        <h3 style="font-size:15px;margin-bottom:14px">Caution</h3>
+        <div class="champ" style="margin-bottom:0"><label>Caution consignée (F CFA)</label>
+          <input type="number" min="0" step="5000" value="${b.caution}"
+            onchange="majFinance('caution',this.value)">
+          <div class="puce-cat" style="margin-top:5px">Remboursable au retour,
+            hors chiffre d'affaires</div></div>
       </div>
     </div>
 
@@ -2242,15 +2292,13 @@ function cascade(t, dejaRegle, arbitre){
   const l = (lab, val, style) => `<div style="display:flex;justify-content:space-between;
     margin-bottom:6px;${style||''}"><span>${lab}</span><span>${val}</span></div>`;
   return `
-    ${l('Total brut HT', fcfa(t.brut), 'color:var(--txt2)')}
-    ${t.remise ? l(`Remise ${t.tauxRemise} %`, '− '+fcfa(t.remise), 'color:var(--orange)') : ''}
-    ${t.remise ? l('Net commercial HT', fcfa(t.netCom), 'color:var(--txt2)') : ''}
-    ${t.escompte ? l(`Escompte ${t.tauxEscompte} %`, '− '+fcfa(t.escompte), 'color:var(--orange)') : ''}
-    ${t.escompte ? l('Net financier HT', fcfa(t.netFin), 'color:var(--txt2)') : ''}
+    ${l('Total location', fcfa(t.brut), 'color:var(--txt2)')}
+    ${t.remise ? l(`Remise ${pct(t.tauxRemise)}`, '− '+fcfa(t.remise), 'color:var(--orange)') : ''}
+    ${t.remise ? l('Net commercial', fcfa(t.netCom), 'color:var(--txt2)') : ''}
+    ${t.escompte ? l(`Escompte ${pct(t.tauxEscompte)}`, '− '+fcfa(t.escompte), 'color:var(--orange)') : ''}
+    ${t.escompte ? l('Net financier', fcfa(t.netFin), 'color:var(--txt2)') : ''}
     ${t.transport ? l('Transport et livraison', fcfa(t.transport), 'color:var(--txt2)') : ''}
-    ${t.transport ? l('Total HT', fcfa(t.totalHT), 'color:var(--txt2)') : ''}
-    ${l(`TVA ${t.tauxTva} %`, fcfa(t.tva), 'color:var(--txt2)')}
-    ${l('Total TTC', fcfa(t.ttc), 'font-weight:700')}
+    ${l('Total', fcfa(t.total), 'font-weight:700')}
     ${t.retenue ? l('Retenue casse et manquants', fcfa(t.retenue), 'color:var(--rouge)') : ''}
     ${t.caution && !arbitre ? l('Caution consignée', fcfa(t.caution), 'color:var(--cyan)') : ''}
     ${l(arbitre ? 'Total dû' : (t.caution ? 'Total à encaisser' : 'Total'),
@@ -2672,7 +2720,7 @@ function encaisser(id){
     <div style="display:flex;justify-content:space-between;margin-bottom:14px">
       <span style="color:var(--txt2)">Reste dû</span>
       <b style="font-size:19px;color:var(--rouge)">${fcfa(r)}</b></div>
-    <div class="champ"><label>Montant encaissé</label>
+    <div class="champ"><label>Montant encaissé <i class="req">*</i></label>
       <input id="pmt" type="number" min="1" max="${r}" value="${r}"></div>
     <div class="champ"><label>Mode de règlement</label>
       <select id="mode"><option>Espèces</option><option>Mobile money</option>
@@ -2797,15 +2845,13 @@ function voirFacture(id){
       </div>
 
       <table class="fac-totaux">
-        ${ligneTotal('Total brut HT', fcfa(t.brut))}
-        ${t.remise ? ligneTotal(`Remise ${t.tauxRemise} %`, '− '+fcfa(t.remise)) : ''}
-        ${t.remise ? ligneTotal('Net commercial HT', fcfa(t.netCom)) : ''}
-        ${t.escompte ? ligneTotal(`Escompte ${t.tauxEscompte} %`, '− '+fcfa(t.escompte)) : ''}
-        ${t.escompte ? ligneTotal('Net financier HT', fcfa(t.netFin)) : ''}
+        ${ligneTotal('Total location', fcfa(t.brut))}
+        ${t.remise ? ligneTotal(`Remise ${pct(t.tauxRemise)}`, '− '+fcfa(t.remise)) : ''}
+        ${t.remise ? ligneTotal('Net commercial', fcfa(t.netCom)) : ''}
+        ${t.escompte ? ligneTotal(`Escompte ${pct(t.tauxEscompte)}`, '− '+fcfa(t.escompte)) : ''}
+        ${t.escompte ? ligneTotal('Net financier', fcfa(t.netFin)) : ''}
         ${t.transport ? ligneTotal(esc(c.transportNote || 'Transport et livraison'), fcfa(t.transport)) : ''}
-        ${t.transport ? ligneTotal('Total HT', fcfa(t.totalHT)) : ''}
-        ${ligneTotal(`TVA ${t.tauxTva} %`, fcfa(t.tva))}
-        ${ligneTotal('Total TTC', fcfa(t.ttc), 'ft-sous')}
+        ${ligneTotal('Total', fcfa(t.total), 'ft-sous')}
         ${t.retenue ? ligneTotal('Retenue casse et manquants', fcfa(t.retenue)) : ''}
         ${t.caution && !c.retenuesFaites ? ligneTotal('Caution consignée', fcfa(t.caution)) : ''}
         ${ligneTotal(c.retenuesFaites ? 'Total dû' : (t.caution ? 'Total à encaisser' : 'Total'),
@@ -2964,13 +3010,13 @@ function formMdp(role){
   const soi = (role === U.role);
   const admin = (U.role === 'ADMIN');
   modale(`Mot de passe — ${esc(role)}`, `
-    ${soi ? `<div class="champ"><label>Mot de passe actuel</label>
+    ${soi ? `<div class="champ"><label>Mot de passe actuel <i class="req">*</i></label>
       <input type="password" id="m-actuel" autocomplete="current-password"></div>` : ''}
-    <div class="champ"><label>Nouveau mot de passe</label>
+    <div class="champ"><label>Nouveau mot de passe <i class="req">*</i></label>
       <input type="password" id="m-neuf" autocomplete="new-password">
       <div class="puce-cat" style="margin-top:5px">${MDP_MIN} caractères minimum,
         pas uniquement des chiffres</div></div>
-    <div class="champ" style="margin-bottom:0"><label>Confirmer</label>
+    <div class="champ" style="margin-bottom:0"><label>Confirmer <i class="req">*</i></label>
       <input type="password" id="m-conf" autocomplete="new-password"
         onkeydown="if(event.key==='Enter')enregistrerMdp('${role}')"></div>
     ${(!soi && admin) ? `<div class="alerte" style="margin:16px 0 0">
@@ -3056,7 +3102,7 @@ function vueDemo(){
             pré-chiffré à la valeur de remplacement du catalogue. Corrigez un montant et
             voyez la caution restituée se recalculer en direct.</li>
         <li>Ouvrez <b>Voir la facture</b> : le document complet, avec la cascade remise →
-            escompte → transport → TVA → caution → retenues → acompte, imprimable ou exportable en PDF.
+            escompte → transport → caution → retenues → acompte, imprimable ou exportable en PDF.
             Restituez le solde de caution, puis terminez sur « Traçabilité »
             (visible en ADMIN) : chaque geste est daté, motivé et signé.</li>
       </ol>
@@ -3083,7 +3129,7 @@ function vueDemo(){
           <b>Hypothèses de maquette</b> à confirmer au cahier des charges :
           tarif unique par jour (ni forfait week-end ni dégressif), articles comptés
           en quantité et non suivis par numéro de série, retenues traitées comme des
-          indemnités et donc hors TVA, mentions légales (RCCM, compte contribuable)
+          indemnités imputées sur la caution, facturation sans TVA, mentions légales (RCCM, compte contribuable)
           à renseigner avant tout usage réel.</div>
       </div>
     </div>
