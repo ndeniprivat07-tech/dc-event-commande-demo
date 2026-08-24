@@ -150,6 +150,17 @@ main{padding:26px 30px 60px;max-width:1500px}
 .sel-tot{text-align:right;font-weight:700;font-size:15px;white-space:nowrap}
 .sel-det{display:block;font-size:11px;color:var(--txt3);font-weight:400;margin-top:2px}
 
+/* Photos du catalogue */
+.vignette{width:42px;height:42px;flex:0 0 auto;border-radius:8px;object-fit:cover;
+  background:#0a0a16;border:1px solid var(--bord)}
+img.vignette{cursor:zoom-in}
+.vide-photo{display:flex;align-items:center;justify-content:center;
+  font-size:16px;opacity:.35}
+.avec-photo{display:flex;align-items:center;gap:11px}
+.apercu-photo{display:flex;align-items:center;gap:12px;margin-top:10px}
+.apercu-photo img{width:96px;height:96px;object-fit:cover;border-radius:10px;
+  border:1px solid var(--bord)}
+
 /* Sélecteur d'articles : filtres en pastilles + liste cliquable */
 .puces{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
 .puce{padding:6px 13px;border-radius:20px;border:1px solid var(--bord);
@@ -1498,7 +1509,14 @@ function vueCatalogue(){
           ${cats.map(c=>`<option ${catFiltre===c?'selected':''}>${esc(c)}</option>`).join('')}
         </select></div>
       <div style="color:var(--txt2);font-size:13px;padding-bottom:9px">
-        Période de <b>${nbJours(catD1,catD2)} jour(s)</b></div>
+        Période de <b>${nbJours(catD1,catD2)} jour(s)</b>
+        ${gere ? (() => {
+          const ko = poidsStockage(), photos = S.articles.filter(a=>a.photo).length;
+          const chaud = ko > 3500;
+          return `<div class="puce-cat" style="margin-top:4px;color:${chaud?'var(--orange)':'var(--txt3)'}">
+            ${photos} photo(s) · mémoire utilisée ${ko > 1024 ? (ko/1024).toFixed(1)+' Mo' : ko+' Ko'}
+            ${chaud ? ' — proche de la limite' : ''}</div>`;
+        })() : ''}</div>
     </div>
   </div>
 
@@ -1516,7 +1534,12 @@ function vueCatalogue(){
         const coul = pc>=100 ? 'var(--rouge)' : pc>=80 ? 'var(--orange)' : 'var(--vert)';
         return `<tr>
           <td style="color:var(--txt3);font-variant-numeric:tabular-nums">${esc(a.ref)}</td>
-          <td><b>${esc(a.nom)}</b><div class="puce-cat">${esc(a.cat)}</div></td>
+          <td><div class="avec-photo">
+            ${a.photo ? `<img class="vignette" src="${a.photo}" alt=""
+                          onclick="voirPhoto('${a.id}')">`
+                      : `<span class="vignette vide-photo">📷</span>`}
+            <span><b>${esc(a.nom)}</b><div class="puce-cat">${esc(a.cat)}</div></span>
+          </div></td>
           <td class="num">${a.qte}</td>
           <td class="num" style="color:var(--txt2)">${r}</td>
           <td class="num ${cl}">${d}</td>
@@ -1531,7 +1554,84 @@ function vueCatalogue(){
   </div>`;
 }
 
+/* =========================================================================
+   PHOTOS DU CATALOGUE
+   Le stockage du navigateur plafonne à quelques Mo : une photo de téléphone
+   brute (3 à 5 Mo) le saturerait dès le deuxième article. Chaque image est
+   donc redimensionnée et recompressée avant d'être conservée.
+   ========================================================================= */
+const PHOTO_PX = 420;             // côté maximum
+const PHOTO_QUALITE = 0.7;
+
+let photoTemp = null;             // photo en cours d'édition dans la fiche article
+
+function redimensionner(fichier){
+  return new Promise((res, rej) => {
+    const lecteur = new FileReader();
+    lecteur.onerror = () => rej(new Error('lecture impossible'));
+    lecteur.onload = () => {
+      const img = new Image();
+      img.onerror = () => rej(new Error('image illisible'));
+      img.onload = () => {
+        const f = Math.min(1, PHOTO_PX / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width  = Math.round(img.width  * f);
+        c.height = Math.round(img.height * f);
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#0a0a16';                 // aplat sous les PNG transparents
+        ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        res(c.toDataURL('image/jpeg', PHOTO_QUALITE));
+      };
+      img.src = lecteur.result;
+    };
+    lecteur.readAsDataURL(fichier);
+  });
+}
+
+async function choisirPhoto(input){
+  const f = input.files && input.files[0];
+  if(!f) return;
+  if(!f.type.startsWith('image/')){ toast("Ce fichier n'est pas une image.", 'err'); return; }
+  const apercu = $('#a-photo-apercu');
+  apercu.innerHTML = '<span style="color:var(--txt3);font-size:12.5px">Compression…</span>';
+  try{
+    photoTemp = await redimensionner(f);
+    apercu.innerHTML = `<img src="${photoTemp}" alt="">
+      <div><div class="puce-cat">${Math.round(photoTemp.length*0.75/1024)} Ko après compression</div>
+      <button class="btn mini r" onclick="retirerPhoto()">Retirer la photo</button></div>`;
+  }catch(e){
+    apercu.innerHTML = '';
+    toast("Image illisible — essayez un autre fichier.", 'err');
+  }
+  input.value = '';
+}
+function retirerPhoto(){
+  photoTemp = null;
+  $('#a-photo-apercu').innerHTML = '';
+}
+
+/* Écriture d'essai : renvoie faux si le quota du navigateur est dépassé,
+   au lieu de couper silencieusement la persistance. */
+function sauverOuEchouer(){
+  try{ localStorage.setItem(CLE, JSON.stringify(S)); return true; }
+  catch(e){ return false; }
+}
+function poidsStockage(){
+  try{ return Math.round((localStorage.getItem(CLE) || '').length / 1024); }
+  catch(e){ return 0; }
+}
+
 /* ---------- Fiche article : creation et modification ---------- */
+function voirPhoto(id){
+  const a = S.articles.find(x=>x.id===id);
+  if(!a || !a.photo) return;
+  modale(esc(a.nom), `
+    <img src="${a.photo}" alt="" style="width:100%;border-radius:10px;display:block">
+    <div class="puce-cat" style="margin-top:10px">${esc(a.ref)} — ${esc(a.cat)}</div>
+  `, `<button class="btn" onclick="fermerModale()">Fermer</button>`);
+}
+
 function formArticle(id){
   const a = id ? S.articles.find(x=>x.id===id) : null;
   const cats = [...new Set(S.articles.map(x=>x.cat))];
@@ -1556,11 +1656,25 @@ function formArticle(id){
       <input id="a-valeur" type="number" min="0" step="1000" value="${a?(a.valeur||0):0}">
       <div class="puce-cat" style="margin-top:5px">Base de calcul des retenues sur caution
         en cas de casse ou de matériel non restitué</div></div>
+    <div class="champ" style="margin-bottom:0"><label>Photo</label>
+      <input type="file" accept="image/*" onchange="choisirPhoto(this)"
+        style="padding:9px 12px;font-size:13px">
+      <div class="apercu-photo" id="a-photo-apercu"></div>
+      <div class="puce-cat" style="margin-top:6px">Redimensionnée à ${PHOTO_PX} px et
+        recompressée automatiquement — la mémoire de l'appareil est limitée</div></div>
     ${a?`<div class="alerte c">Déjà engagé sur des commandes en cours :
       <b>${reserve(a.id, auj().toISOString().slice(0,10), jour(365))}</b> unité(s).
       La quantité du parc ne peut pas descendre en dessous.</div>`:''}
   `, `<button class="btn" onclick="fermerModale()">Annuler</button>
       <button class="btn p" onclick="enregistrerArticle(${a?`'${a.id}'`:'null'})">Enregistrer</button>`);
+
+  // La photo existante est reprise telle quelle tant qu'on n'en choisit pas d'autre
+  photoTemp = a ? (a.photo || null) : null;
+  if(photoTemp){
+    $('#a-photo-apercu').innerHTML = `<img src="${photoTemp}" alt="">
+      <div><div class="puce-cat">${Math.round(photoTemp.length*0.75/1024)} Ko</div>
+      <button class="btn mini r" onclick="retirerPhoto()">Retirer la photo</button></div>`;
+  }
 }
 
 function enregistrerArticle(id){
@@ -1583,15 +1697,34 @@ function enregistrerArticle(id){
       toast(`Impossible : ${engage} unité(s) sont déjà engagées sur des commandes en cours.`, 'err'); return;
     }
     const avant = `${a.qte} au parc à ${fcfa(a.prix)}/j`;
+    const photoAvant = a.photo || null;
     Object.assign(a, {nom, cat, qte, prix, valeur});
+    if(photoTemp) a.photo = photoTemp; else delete a.photo;
+    if(!sauverOuEchouer()){
+      if(photoAvant) a.photo = photoAvant; else delete a.photo;
+      sauver();
+      toast("Mémoire de l'appareil pleine : photo non enregistrée. Supprimez des photos existantes.", 'err');
+      return;
+    }
     tracer('Modification article', `${a.ref} — ${avant} → ${qte} au parc à ${fcfa(prix)}/j`, a.id);
     toast(`${a.ref} mis à jour.`, 'ok');
   } else {
     if(S.articles.some(x=>x.ref===ref)){ toast(`La référence ${ref} existe déjà.`, 'err'); return; }
-    S.articles.push({id:ref, ref, nom, cat, qte, prix, valeur, unite:'unité'});
+    const neuf = {id:ref, ref, nom, cat, qte, prix, valeur, unite:'unité'};
+    if(photoTemp) neuf.photo = photoTemp;
+    S.articles.push(neuf);
+    if(!sauverOuEchouer()){
+      delete neuf.photo;
+      if(!sauverOuEchouer()){ S.articles.pop(); sauver();
+        toast("Mémoire de l'appareil pleine : article non enregistré.", 'err'); return; }
+      toast(`${ref} ajouté, mais sans la photo : mémoire pleine.`, 'err');
+      tracer('Création article', `${ref} — ${nom} (photo refusée, mémoire pleine)`, ref);
+      photoTemp = null; fermerModale(); rendre(); return;
+    }
     tracer('Création article', `${ref} — ${nom} — ${qte} au parc à ${fcfa(prix)}/j`, ref);
     toast(`${ref} ajouté au catalogue.`, 'ok');
   }
+  photoTemp = null;
   sauver(); fermerModale(); rendre();
 }
 
@@ -1873,6 +2006,8 @@ function selecteurArticles(b){
         const epuise = d < 1 || (l && l.qte >= d);
         return `<button class="art ${epuise?'ko':''}" ${epuise?'disabled':''}
           onclick="ajouterLigne('${a.id}')">
+          ${a.photo ? `<img class="vignette" src="${a.photo}" alt="">`
+                    : `<span class="vignette vide-photo">📷</span>`}
           <span class="art-txt">
             <span class="art-nom">${esc(a.nom)}</span>
             <span class="art-sous">${esc(a.ref)} · ${fcfa(a.prix)}/jour ·
@@ -2149,8 +2284,13 @@ function ouvrirCommande(id){
       ${peutModifier && argent ? '<th></th>' : ''}</tr></thead><tbody>
       ${c.lignes.map(l=>{
         const brut = l.qte*l.prix*t.jours;
+        const art = S.articles.find(x=>x.id===l.articleId);
         return `<tr>
-          <td>${esc(l.nom)}<div class="puce-cat">${esc(l.ref)}</div></td>
+          <td><div class="avec-photo">
+            ${art && art.photo ? `<img class="vignette" src="${art.photo}" alt=""
+                                    onclick="voirPhoto('${l.articleId}')">` : ''}
+            <span>${esc(l.nom)}<div class="puce-cat">${esc(l.ref)}</div></span>
+          </div></td>
           <td class="num">${l.qte}</td>
           ${argent ? `<td class="num">${fcfa(l.prix)}</td>
           <td class="num">${fcfa(brut*(1-(l.remise||0)/100))}
