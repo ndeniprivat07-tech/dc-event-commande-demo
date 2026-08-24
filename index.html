@@ -1074,8 +1074,31 @@ function alea(n){
   return t;
 }
 
+/* Dans l'APK, la WebView n'implémente pas WebAuthn : une passerelle native
+   expose BiometricPrompt sous le nom AndroidBio. On la préfère quand elle
+   existe, et on retombe sur WebAuthn dans un navigateur. */
+const surAndroid = () => typeof AndroidBio !== 'undefined' && AndroidBio;
+
+let bioAttente = null;
+window.__bioReponse = function(ok, message){
+  if(!bioAttente) return;
+  const f = bioAttente; bioAttente = null;
+  f({ ok: (ok === true || ok === 'true'), message: message || '' });
+};
+function demanderBioAndroid(){
+  return new Promise(res=>{
+    bioAttente = res;
+    try{ AndroidBio.demander('DC EVENT COMMANDE', "Confirmez votre identité"); }
+    catch(e){ bioAttente = null; res({ ok:false, message:'passerelle indisponible' }); }
+    // Filet de sécurité : si la passerelle ne répond jamais, on ne fige pas l'écran.
+    setTimeout(()=>{ if(bioAttente){ const f=bioAttente; bioAttente=null;
+      f({ ok:false, message:'délai dépassé' }); } }, 65000);
+  });
+}
+
 async function empreinteDispo(){
   try{
+    if(surAndroid()) return AndroidBio.disponible() === true;
     if(!window.PublicKeyCredential) return false;
     if(!location.protocol.startsWith('http')) return false;   // exige une origine sûre
     return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
@@ -1085,6 +1108,20 @@ async function empreinteDispo(){
 async function activerEmpreinte(role){
   if(!await empreinteDispo()){
     toast("Cet appareil ne propose pas de déverrouillage biométrique.", 'err'); return; }
+
+  // Sur Android, l'empreinte est gérée par le système : rien à enrôler ici.
+  // On demande une vérification immédiate pour confirmer que ça marche.
+  if(surAndroid()){
+    const r = await demanderBioAndroid();
+    if(!r.ok){ toast("Activation abandonnée : " + (r.message || 'refusée'), 'err'); return; }
+    if(!S.biometrie) S.biometrie = {};
+    S.biometrie[role] = 'android';
+    tracer('Empreinte activée', `profil ${role} (système Android)`);
+    sauver(); fermerModale(); rendre();
+    toast(`Déverrouillage par empreinte activé pour ${role}.`, 'ok');
+    return;
+  }
+
   try{
     const cred = await navigator.credentials.create({ publicKey:{
       challenge: alea(32),
@@ -1118,6 +1155,20 @@ async function connexionEmpreinte(role){
   if(!id) return;
   const err = $('#mdp-err');
   err.textContent = '';
+
+  if(id === 'android' || surAndroid()){
+    const r = await demanderBioAndroid();
+    if(r.ok){
+      const rr = roleChoisi;
+      succes('mdp:' + rr);
+      retourRoles(); connexion(rr);
+      tracer('Connexion par empreinte', UTILISATEURS[rr].nom); sauver();
+    } else {
+      err.textContent = "Empreinte non reconnue — utilisez le mot de passe.";
+    }
+    return;
+  }
+
   try{
     const ok = await navigator.credentials.get({ publicKey:{
       challenge: alea(32),

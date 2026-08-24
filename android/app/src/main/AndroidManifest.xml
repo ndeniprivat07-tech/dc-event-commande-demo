@@ -5,11 +5,15 @@
          surprise si une évolution future charge une ressource en ligne. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Déverrouillage par empreinte. L'application ne lit jamais l'empreinte :
+         elle demande au système de vérifier et n'obtient qu'un oui ou un non. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+
     <application
         android:label="DC EVENT COMMANDE"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="true"
-        android:theme="@android:style/Theme.Material.NoActionBar">
+        android:theme="@style/ThemeDC">
 
         <activity
             android:name=".MainActivity"

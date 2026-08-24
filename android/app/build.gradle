@@ -31,4 +31,8 @@ dependencies {
     // WebViewAssetLoader : sert le fichier embarque sous une origine https,
     // ce qui garantit le bon fonctionnement de localStorage.
     implementation 'androidx.webkit:webkit:1.11.0'
+    // BiometricPrompt : la WebView n'implemente pas WebAuthn, l'empreinte
+    // passe donc par le systeme. AppCompat est exige par BiometricPrompt.
+    implementation 'androidx.biometric:biometric:1.1.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
 }

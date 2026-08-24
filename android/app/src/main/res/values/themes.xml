@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- BiometricPrompt exige une activite AppCompat, donc un theme AppCompat.
+         Fond sombre pour eviter un flash blanc au lancement. -->
+    <style name="ThemeDC" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/fond</item>
+        <item name="android:statusBarColor">@color/fond</item>
+        <item name="android:navigationBarColor">@color/fond</item>
+    </style>
+</resources>
