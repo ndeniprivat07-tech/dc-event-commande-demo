@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#08080f">
+<meta name="theme-color" content="#ffffff">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="DC EVENT">
@@ -13,522 +13,455 @@
 <title>DC EVENT COMMANDE</title>
 <style>
 /* ---------------------------------------------------------------
-   DC EVENT COMMANDE - maquette de demonstration hors-ligne
-   Palette calee sur le logo DC EVENT : neon rose + cyan sur noir.
+   DC EVENT COMMANDE — habillage sobre
+   Outil de travail, pas vitrine : fond clair, une seule couleur
+   d'accent, aucun dégradé ni halo, densité resserrée. La lisibilité
+   en plein soleil, sur un téléphone au dépôt, prime sur l'effet.
    --------------------------------------------------------------- */
 :root{
-  --fond:#08080f; --fond2:#0e0e1b; --panneau:#13132339; --carte:#15152a;
-  --bord:#26264a; --bord-clair:#343463;
-  --txt:#e8e8f5; --txt2:#9a9ac0; --txt3:#6b6b90;
-  --rose:#ff2d78; --rose-clair:#ff7aae; --cyan:#22d3ee; --bleu:#3b82f6;
-  --vert:#22c55e; --orange:#f59e0b; --rouge:#ef4444;
-  --r:10px;
+  --fond:#f2f4f7; --fond2:#ffffff; --carte:#ffffff; --panneau:#f7f8fa;
+  --bord:#dfe3e8; --bord-clair:#c8cfd8;
+  --txt:#16191d; --txt2:#5a636e; --txt3:#8a929c;
+  --accent:#9d1550; --accent-fonce:#7d0f3f; --accent-pale:#fdf2f6;
+  --vert:#15803d; --vert-pale:#f0fdf4;
+  --orange:#b45309; --orange-pale:#fffbeb;
+  --rouge:#b91c1c; --rouge-pale:#fef2f2;
+  --bleu:#1d4ed8; --bleu-pale:#eff6ff;
+  --r:6px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
 body{
-  font-family:'Segoe UI',system-ui,sans-serif; background:var(--fond); color:var(--txt);
-  min-height:100vh; font-size:14px;
-  background-image:radial-gradient(ellipse 80% 50% at 20% 0%, #2a0d3a55, transparent),
-                   radial-gradient(ellipse 60% 50% at 90% 10%, #08325a55, transparent);
-  background-attachment:fixed;
+  font-family:-apple-system,'Segoe UI',Roboto,system-ui,sans-serif;
+  background:var(--fond); color:var(--txt); min-height:100vh; font-size:14px;
+  -webkit-tap-highlight-color:transparent; overscroll-behavior-y:contain;
 }
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 button{cursor:pointer;border:none;background:none;touch-action:manipulation}
-/* iOS : empeche le grossissement du texte en rotation et le halo bleu au toucher */
-html{-webkit-text-size-adjust:100%}
-body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:contain}
-a{color:var(--cyan)}
+a{color:var(--bleu)}
 
-/* ---------- Ecran de connexion ---------- */
+/* ---------- Connexion ---------- */
 #login{
   position:fixed; inset:0; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:26px; z-index:100;
-  background:var(--fond);
-  background-image:radial-gradient(ellipse 70% 60% at 50% 30%, #3a0f4a66, transparent),
-                   radial-gradient(ellipse 60% 40% at 50% 100%, #0a3a6666, transparent);
+  align-items:center; justify-content:center; gap:20px; z-index:100;
+  background:var(--fond); padding:24px 16px; overflow-y:auto;
 }
-#login img{width:190px;border-radius:50%;box-shadow:0 0 60px #ff2d7855,0 0 120px #22d3ee33}
-#login h1{font-size:26px;letter-spacing:5px;font-weight:300}
-#login h1 b{font-weight:700;background:linear-gradient(90deg,var(--rose),var(--cyan));
-  -webkit-background-clip:text;background-clip:text;color:transparent}
-#login p{color:var(--txt2);margin-top:-16px;font-size:13px}
-.roles{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;padding:0 16px}
-.role{
-  width:210px;padding:22px 18px;border:1px solid var(--bord);border-radius:14px;
-  background:var(--carte);text-align:center;transition:.18s;
-}
-.role:hover{border-color:var(--rose);transform:translateY(-4px);box-shadow:0 10px 34px #ff2d7833}
-.role .ic{font-size:30px;display:block;margin-bottom:10px}
+#login img{width:88px;height:88px;border-radius:4px;object-fit:cover}
+#login h1{font-size:19px;letter-spacing:3px;font-weight:400;color:var(--txt)}
+#login h1 b{font-weight:700;color:var(--accent)}
+#login p{color:var(--txt2);margin-top:-12px;font-size:13px;text-align:center}
+.roles{display:flex;flex-direction:column;gap:1px;width:100%;max-width:380px;
+  background:var(--bord);border:1px solid var(--bord);border-radius:var(--r);overflow:hidden}
+.role{width:100%;padding:15px 17px;background:var(--carte);text-align:left;transition:.12s}
+.role:hover{background:var(--panneau)}
+.role .ic{display:none}
+.role .nom{display:block;font-weight:600;font-size:14px;letter-spacing:.4px;margin-bottom:3px}
+.role .desc{display:block;font-size:12.5px;color:var(--txt2);line-height:1.45}
 
-/* Saisie du mot de passe : remplace la grille des profils */
-#etape-mdp{display:none;width:100%;max-width:340px;text-align:center;padding:0 16px}
+#etape-mdp{display:none;width:100%;max-width:340px}
 #etape-mdp.on{display:block}
-.mdp-ic{font-size:34px;margin-bottom:8px}
-.mdp-role{font-weight:700;letter-spacing:2px;font-size:15px}
-.mdp-qui{color:var(--txt2);font-size:13px;margin-bottom:16px}
-#mdp-champ{width:100%;padding:13px 15px;background:#0a0a16;border:1px solid var(--bord);
-  border-radius:10px;outline:none;font-size:16px;text-align:center;letter-spacing:2px;
-  transition:.15s}
-#mdp-champ:focus{border-color:var(--rose);box-shadow:0 0 0 3px #ff2d7822}
-#mdp-champ.faux{border-color:var(--rouge);animation:secousse .3s}
-@keyframes secousse{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
-.mdp-err{min-height:20px;color:#fca5a5;font-size:12.5px;margin:9px 0 4px;line-height:1.4}
-#mdp-aide{max-width:400px;padding:0 16px}
-.aide-mdp{border:1px dashed var(--bord-clair);border-radius:10px;padding:12px 15px;
-  font-size:12px;color:var(--txt2);line-height:1.7;text-align:left}
-.aide-mdp b{color:var(--txt);font-family:monospace;letter-spacing:.5px}
-.code-secours{font-family:monospace;font-size:26px;font-weight:700;letter-spacing:3px;
-  text-align:center;padding:18px 10px;margin:16px 0;border-radius:12px;
-  background:#0a0a16;border:1px dashed var(--rose);color:var(--rose-clair);
-  user-select:all;word-break:break-all}
-.bio{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
-  padding:13px;margin-bottom:14px;border-radius:10px;font-size:14.5px;font-weight:600;
-  background:linear-gradient(135deg,var(--cyan),var(--bleu));color:#04121c}
-.bio:active{filter:brightness(.92)}
-.bio .ic{font-size:19px}
-.ou{display:flex;align-items:center;gap:10px;color:var(--txt3);font-size:11.5px;
-  letter-spacing:1.5px;margin-bottom:12px}
+.mdp-ic{display:none}
+.mdp-role{font-weight:600;letter-spacing:1px;font-size:13px;color:var(--txt2)}
+.mdp-qui{color:var(--txt);font-size:17px;font-weight:600;margin-bottom:14px}
+#mdp-champ{width:100%;padding:11px 13px;background:var(--carte);
+  border:1px solid var(--bord-clair);border-radius:var(--r);outline:none;font-size:16px}
+#mdp-champ:focus{border-color:var(--accent)}
+#mdp-champ.faux{border-color:var(--rouge)}
+.mdp-err{min-height:18px;color:var(--rouge);font-size:12.5px;margin:8px 0 4px;line-height:1.4}
+#mdp-aide{max-width:380px;width:100%}
+.aide-mdp{border:1px solid var(--bord);background:var(--carte);border-radius:var(--r);
+  padding:11px 14px;font-size:12px;color:var(--txt2);line-height:1.7}
+.aide-mdp b{color:var(--txt);font-family:ui-monospace,monospace}
+.bio{display:block;width:100%;padding:11px;margin-bottom:12px;border-radius:var(--r);
+  font-size:14px;font-weight:600;background:var(--carte);border:1px solid var(--bord-clair);color:var(--txt)}
+.bio:hover{border-color:var(--accent);color:var(--accent)}
+.bio .ic{display:none}
+.ou{display:flex;align-items:center;gap:10px;color:var(--txt3);font-size:11px;
+  letter-spacing:1px;margin-bottom:11px}
 .ou::before,.ou::after{content:'';flex:1;height:1px;background:var(--bord)}
-.role .nom{display:block;font-weight:700;letter-spacing:1.5px;margin-bottom:7px}
-.role .desc{display:block;font-size:12px;color:var(--txt2);line-height:1.5}
 
 /* ---------- Ossature ---------- */
-#app{display:none;grid-template-columns:236px 1fr;min-height:100vh}
+#app{display:none;grid-template-columns:220px 1fr;min-height:100vh}
 #app.on{display:grid}
-aside{
-  background:#0b0b16; border-right:1px solid var(--bord);
-  padding:18px 12px; display:flex; flex-direction:column; gap:4px;
-  position:sticky; top:0; height:100vh; overflow-y:auto;
-}
-.marque{display:flex;align-items:center;gap:11px;padding:4px 8px 18px}
-.marque img{width:42px;height:42px;border-radius:50%;box-shadow:0 0 18px #ff2d7855}
-.marque .t1{font-weight:700;letter-spacing:2px;font-size:14px;line-height:1.2}
-.marque .t2{font-size:10px;color:var(--txt3);letter-spacing:2.5px}
-nav button{
-  display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;
-  border-radius:8px;color:var(--txt2);text-align:left;transition:.14s;font-size:13.5px;
-}
-nav button:hover{background:#ffffff0d;color:var(--txt)}
-nav button.actif{background:linear-gradient(90deg,#ff2d7826,transparent);color:#fff;
-  box-shadow:inset 2px 0 0 var(--rose)}
-nav button .pastille{margin-left:auto;background:var(--rose);color:#fff;font-size:10px;
-  font-weight:700;padding:2px 7px;border-radius:20px}
-.qui{margin-top:auto;border-top:1px solid var(--bord);padding-top:14px}
-.qui .r{font-size:11px;color:var(--txt3);letter-spacing:1.5px}
-.qui .n{font-weight:600;margin:2px 0 10px}
+aside{background:var(--carte);border-right:1px solid var(--bord);padding:14px 10px;
+  display:flex;flex-direction:column;gap:1px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.marque{display:flex;align-items:center;gap:10px;padding:4px 8px 16px}
+.marque img{width:32px;height:32px;border-radius:4px;object-fit:cover}
+.marque .t1{font-weight:700;letter-spacing:1px;font-size:13px;line-height:1.2}
+.marque .t2{font-size:10px;color:var(--txt3);letter-spacing:1.5px}
+nav button{display:flex;align-items:center;gap:9px;width:100%;padding:8px 11px;
+  border-radius:4px;color:var(--txt2);text-align:left;font-size:13.5px;transition:.1s}
+nav button:hover{background:var(--panneau);color:var(--txt)}
+nav button.actif{background:var(--accent-pale);color:var(--accent);font-weight:600}
+nav button span:first-child{display:none}
+nav button .pastille{margin-left:auto;background:var(--accent);color:#fff;font-size:10.5px;
+  font-weight:600;padding:1px 6px;border-radius:9px;min-width:17px;text-align:center}
+.qui{margin-top:auto;border-top:1px solid var(--bord);padding-top:12px}
+.qui .r{font-size:10.5px;color:var(--txt3);letter-spacing:1px}
+.qui .n{font-weight:600;margin:1px 0 9px}
 
-main{padding:26px 30px 60px;max-width:1500px}
-.tbl-scroll{overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}
-
-/* Fiche de travail du préparateur : lisible au pouce, sans défilement latéral */
-/* Titres numérotés des blocs de saisie : le parcours doit se lire d'un coup */
-.etiq{display:flex;align-items:center;gap:10px;font-size:15px;margin-bottom:14px}
-.etiq-n{width:23px;height:23px;border-radius:50%;flex:0 0 auto;
-  background:linear-gradient(135deg,var(--rose),#c026d3);color:#fff;
-  font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
-.etiq-c{background:#22d3ee1f;color:var(--cyan);font-size:11.5px;font-weight:700;
-  padding:2px 9px;border-radius:20px}
-
-/* Matériel retenu : une fiche par ligne, avec incrément tactile */
-.sel{background:#0a0a16;border:1px solid var(--bord);border-radius:10px;
-  padding:12px 14px;margin-bottom:9px}
-.sel:last-child{margin-bottom:0}
-.sel-tete{display:flex;align-items:flex-start;gap:10px}
-.sel-nom{flex:1;min-width:0;font-weight:600;font-size:14px;line-height:1.35}
-.sel-ref{display:block;font-size:11px;color:var(--txt3);font-weight:400;
-  letter-spacing:.3px;margin-top:3px;text-transform:uppercase}
-.sel-x{flex:0 0 auto}
-.sel-bas{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:11px}
-.pas{display:flex;align-items:center;gap:2px;background:#ffffff0d;
-  border:1px solid var(--bord);border-radius:9px;overflow:hidden}
-.pas-b{width:38px;height:36px;font-size:19px;font-weight:700;color:var(--rose-clair);
-  display:flex;align-items:center;justify-content:center;transition:.12s}
-.pas-b:hover:not(:disabled){background:var(--rose);color:#fff}
-.pas-b:disabled{opacity:.3;cursor:not-allowed}
-.pas-v{min-width:46px;text-align:center;font-weight:700;font-size:15px;
-  font-variant-numeric:tabular-nums}
-.sel-tot{text-align:right;font-weight:700;font-size:15px;white-space:nowrap}
-.sel-det{display:block;font-size:11px;color:var(--txt3);font-weight:400;margin-top:2px}
-
-/* Champs obligatoires */
-.req{color:var(--rose);font-style:normal;font-weight:700;margin-left:1px}
-.legende-req{color:var(--txt3);font-size:11.5px;margin-top:12px}
-.legende-req .req{margin-right:3px}
-
-/* Réduction : saisie en pourcentage ou en francs */
-.duo{display:flex;gap:9px;align-items:stretch}
-.duo input{flex:1;min-width:0}
-.bascule{display:flex;flex:0 0 auto;border:1px solid var(--bord);border-radius:8px;overflow:hidden}
-.bascule button{padding:0 13px;font-size:12.5px;font-weight:600;color:var(--txt3);
-  background:#0a0a16;transition:.14s;white-space:nowrap}
-.bascule button:hover{color:var(--txt)}
-.bascule button.on{background:linear-gradient(135deg,var(--rose),#c026d3);color:#fff}
-
-/* Photos du catalogue */
-.vignette{width:42px;height:42px;flex:0 0 auto;border-radius:8px;object-fit:cover;
-  background:#0a0a16;border:1px solid var(--bord)}
-img.vignette{cursor:zoom-in}
-.vide-photo{display:flex;align-items:center;justify-content:center;
-  font-size:16px;opacity:.35}
-.avec-photo{display:flex;align-items:center;gap:11px}
-.apercu-photo{display:flex;align-items:center;gap:12px;margin-top:10px}
-.apercu-photo img{width:96px;height:96px;object-fit:cover;border-radius:10px;
-  border:1px solid var(--bord)}
-
-/* Sélecteur d'articles : filtres en pastilles + liste cliquable */
-.puces{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
-.puce{padding:6px 13px;border-radius:20px;border:1px solid var(--bord);
-  background:var(--carte);color:var(--txt2);font-size:12.5px;transition:.14s;white-space:nowrap}
-.puce:hover{border-color:var(--bord-clair);color:var(--txt)}
-.puce.on{background:linear-gradient(135deg,var(--rose),#c026d3);border-color:transparent;
-  color:#fff;font-weight:600}
-.puce.raz{color:var(--txt3)}
-.liste-art{max-height:290px;overflow-y:auto;border:1px solid var(--bord);
-  border-radius:10px;background:#0a0a16;-webkit-overflow-scrolling:touch}
-.art{display:flex;align-items:center;gap:11px;width:100%;padding:11px 14px;
-  border-bottom:1px solid #ffffff0a;text-align:left;transition:.12s}
-.art:last-child{border-bottom:none}
-.art:hover:not(:disabled){background:#ff2d7814}
-.art:disabled{opacity:.4;cursor:not-allowed}
-.art-txt{flex:1;min-width:0}
-.art-nom{display:block;font-weight:600;font-size:13.5px;line-height:1.35}
-.art-sous{display:block;font-size:11.5px;color:var(--txt3);margin-top:2px}
-.art-deja{background:#22d3ee1f;color:var(--cyan);font-size:11.5px;font-weight:700;
-  padding:2px 9px;border-radius:20px;flex:0 0 auto}
-.art-plus{width:28px;height:28px;border-radius:50%;background:#ffffff12;flex:0 0 auto;
-  display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;
-  color:var(--rose-clair)}
-.art:hover:not(:disabled) .art-plus{background:var(--rose);color:#fff}
-
-/* Fil d'Ariane des étapes de saisie */
-.ruban{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
-.ruban-e{display:flex;align-items:center;gap:9px;padding:8px 15px;border-radius:26px;
-  border:1px solid var(--bord);background:var(--carte);color:var(--txt3);font-size:13px}
-.ruban-e.actif{border-color:var(--rose);color:var(--txt);box-shadow:0 0 0 3px #ff2d7818}
-.ruban-e.fait{color:var(--txt2);border-color:#22c55e55}
-.ruban-n{width:21px;height:21px;border-radius:50%;background:#ffffff14;color:inherit;
-  display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700}
-.ruban-e.actif .ruban-n{background:linear-gradient(135deg,var(--rose),#c026d3);color:#fff}
-.ruban-e.fait .ruban-n{background:#22c55e2e;color:#6ee7a0}
-.ruban-t{flex:1;min-width:16px;height:1px;background:var(--bord)}
-
-.job{background:#0a0a16;border:1px solid var(--bord);border-radius:10px;
-  padding:13px 15px;margin-bottom:10px}
-.job:last-child{margin-bottom:0}
-.job-tete{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:7px}
-.job-num{font-variant-numeric:tabular-nums;font-size:12px;color:var(--txt3);letter-spacing:.5px}
-.job-qte{margin-left:auto;background:#22d3ee1f;color:var(--cyan);font-size:11.5px;
-  font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap}
-.job-client{font-size:16px;font-weight:700;margin-bottom:6px;line-height:1.3}
-.job-info{color:var(--txt2);font-size:13px;line-height:1.7}
-.job-actions{display:flex;gap:9px;margin-top:12px}
-.job-actions .btn{flex:1;padding:9px 12px}
-.deux-col{grid-template-columns:1fr 380px;align-items:start}
-
-/* Barre du haut : mobile uniquement (masquee en grand ecran) */
-#barre{display:none}
-.entete{display:flex;align-items:flex-end;gap:16px;margin-bottom:22px;flex-wrap:wrap}
-.entete h2{font-size:23px;font-weight:600}
-.entete .sous{color:var(--txt2);font-size:13px;margin-top:3px}
-.entete .droite{margin-left:auto;display:flex;gap:9px;flex-wrap:wrap}
+main{padding:22px 26px 44px;max-width:1400px}
+.entete{display:flex;align-items:flex-end;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.entete h2{font-size:20px;font-weight:600;letter-spacing:-.2px}
+.entete .sous{color:var(--txt2);font-size:13px;margin-top:2px}
+.entete .droite{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
 
 /* ---------- Briques ---------- */
-.carte{background:var(--carte);border:1px solid var(--bord);border-radius:var(--r);padding:18px}
-.grille{display:grid;gap:16px}
-.stats{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
-.stat .lab{font-size:11px;letter-spacing:1.4px;color:var(--txt3);text-transform:uppercase}
-.stat .val{font-size:27px;font-weight:700;margin:7px 0 2px}
+.carte{background:var(--carte);border:1px solid var(--bord);border-radius:var(--r);padding:16px}
+.grille{display:grid;gap:14px}
+.stats{grid-template-columns:repeat(auto-fit,minmax(148px,1fr))}
+.stat .lab{font-size:11px;letter-spacing:.6px;color:var(--txt3);text-transform:uppercase}
+.stat .val{font-size:24px;font-weight:600;margin:6px 0 2px;letter-spacing:-.5px}
 .stat .det{font-size:12px;color:var(--txt2)}
-.stat.rose .val{color:var(--rose-clair)} .stat.cyan .val{color:var(--cyan)}
-.stat.orange .val{color:var(--orange)} .stat.vert .val{color:var(--vert)}
-.stat.rouge .val{color:var(--rouge)}
+.stat.rose .val,.stat.cyan .val,.stat.orange .val,.stat.vert .val,.stat.rouge .val{color:var(--txt)}
 
+.tbl-scroll{overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:collapse}
-th{text-align:left;font-size:11px;letter-spacing:1.2px;color:var(--txt3);
-  text-transform:uppercase;padding:9px 10px;border-bottom:1px solid var(--bord);font-weight:600}
-td{padding:11px 10px;border-bottom:1px solid #ffffff0a;vertical-align:middle}
+th{text-align:left;font-size:11px;letter-spacing:.5px;color:var(--txt3);
+  text-transform:uppercase;padding:8px 10px;border-bottom:1px solid var(--bord);font-weight:600}
+td{padding:9px 10px;border-bottom:1px solid var(--bord);vertical-align:middle}
 tr:last-child td{border-bottom:none}
-tbody tr:hover{background:#ffffff07}
-.num{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:var(--panneau)}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* Les references et numeros ne doivent jamais se couper en deux */
+td[style*="tabular-nums"]{white-space:nowrap}
 th.num{text-align:right}
 
-.btn{padding:8px 15px;border-radius:8px;background:#ffffff12;border:1px solid var(--bord);
-  transition:.15s;font-size:13px;white-space:nowrap}
-.btn:hover{background:#ffffff1f;border-color:var(--bord-clair)}
-.btn.p{background:linear-gradient(135deg,var(--rose),#c026d3);border-color:transparent;
-  color:#fff;font-weight:600;box-shadow:0 4px 18px #ff2d7840}
-.btn.p:hover{filter:brightness(1.14)}
-.btn.c{background:linear-gradient(135deg,var(--cyan),var(--bleu));border-color:transparent;
-  color:#04121c;font-weight:700}
-.btn.v{background:#22c55e22;border-color:#22c55e55;color:#6ee7a0}
-.btn.r{background:#ef444422;border-color:#ef444455;color:#fca5a5}
-.btn.mini{padding:5px 10px;font-size:12px}
-.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn{padding:7px 13px;border-radius:5px;background:var(--carte);border:1px solid var(--bord-clair);
+  transition:.1s;font-size:13px;white-space:nowrap;color:var(--txt);font-weight:500}
+.btn:hover{background:var(--panneau);border-color:var(--txt3)}
+.btn.p{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.p:hover{background:var(--accent-fonce);border-color:var(--accent-fonce)}
+.btn.c{background:var(--carte);border-color:var(--bleu);color:var(--bleu)}
+.btn.c:hover{background:var(--bleu-pale)}
+.btn.v{background:var(--carte);border-color:var(--vert);color:var(--vert)}
+.btn.v:hover{background:var(--vert-pale)}
+.btn.r{background:var(--carte);border-color:var(--rouge);color:var(--rouge)}
+.btn.r:hover{background:var(--rouge-pale)}
+.btn.mini{padding:4px 9px;font-size:12px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
 
-.et{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;
-  font-weight:600;letter-spacing:.4px;white-space:nowrap}
-.et.DEVIS{background:#6b7280335;background:#6b728033;color:#c4c9d4}
-.et.RESERVEE{background:#3b82f628;color:#93c5fd}
-.et.PREPAREE{background:#a855f728;color:#d8b4fe}
-.et.LIVREE{background:#f59e0b28;color:#fcd34d}
-.et.RETOURNEE{background:#22d3ee28;color:#7de8f8}
-.et.FACTUREE{background:#22c55e28;color:#86efac}
-.et.SOLDEE{background:#22c55e40;color:#bbf7d0}
-.et.ANNULEE{background:#ef444428;color:#fca5a5}
-.et.EN_ATTENTE{background:#f59e0b28;color:#fcd34d}
-.et.APPROUVEE{background:#22c55e28;color:#86efac}
-.et.REFUSEE{background:#ef444428;color:#fca5a5}
+.et{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;
+  font-weight:600;letter-spacing:.2px;white-space:nowrap;border:1px solid}
+.et.DEVIS{background:var(--panneau);color:var(--txt2);border-color:var(--bord-clair)}
+.et.RESERVEE{background:var(--bleu-pale);color:var(--bleu);border-color:#bfd3fd}
+.et.PREPAREE{background:#f5f3ff;color:#6d28d9;border-color:#ddd6fe}
+.et.LIVREE{background:var(--orange-pale);color:var(--orange);border-color:#fde68a}
+.et.RETOURNEE{background:#ecfeff;color:#0e7490;border-color:#a5f3fc}
+.et.FACTUREE{background:var(--vert-pale);color:var(--vert);border-color:#bbf7d0}
+.et.SOLDEE{background:var(--vert-pale);color:var(--vert);border-color:#86efac}
+.et.ANNULEE{background:var(--rouge-pale);color:var(--rouge);border-color:#fecaca}
+.et.EN_ATTENTE{background:var(--orange-pale);color:var(--orange);border-color:#fde68a}
+.et.APPROUVEE{background:var(--vert-pale);color:var(--vert);border-color:#bbf7d0}
+.et.REFUSEE{background:var(--rouge-pale);color:var(--rouge);border-color:#fecaca}
 
-.champ{margin-bottom:14px}
-.champ label{display:block;font-size:11.5px;letter-spacing:1.1px;color:var(--txt3);
-  text-transform:uppercase;margin-bottom:6px}
+.champ{margin-bottom:13px}
+.champ label{display:block;font-size:12px;color:var(--txt2);font-weight:600;margin-bottom:5px}
 .champ input,.champ select,.champ textarea{
-  width:100%;padding:9px 12px;background:#0a0a16;border:1px solid var(--bord);
-  border-radius:8px;outline:none;transition:.15s}
-.champ input:focus,.champ select:focus,.champ textarea:focus{
-  border-color:var(--rose);box-shadow:0 0 0 3px #ff2d7822}
-.champ textarea{resize:vertical;min-height:78px}
-.paire{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  width:100%;padding:8px 11px;background:var(--carte);border:1px solid var(--bord-clair);
+  border-radius:5px;outline:none;transition:.1s}
+.champ input:focus,.champ select:focus,.champ textarea:focus{border-color:var(--accent)}
+.champ textarea{resize:vertical;min-height:70px}
+.paire{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.req{color:var(--rouge);font-style:normal;font-weight:600;margin-left:1px}
+.legende-req{color:var(--txt3);font-size:11.5px;margin-top:11px}
 
-/* ---------- Fenetre modale ---------- */
-#voile{position:fixed;inset:0;background:#000000c4;backdrop-filter:blur(3px);
-  display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+.duo{display:flex;gap:8px;align-items:stretch}
+.duo input{flex:1;min-width:0}
+.bascule{display:flex;flex:0 0 auto;border:1px solid var(--bord-clair);border-radius:5px;overflow:hidden}
+.bascule button{padding:0 12px;font-size:12.5px;font-weight:600;color:var(--txt3);
+  background:var(--carte);white-space:nowrap}
+.bascule button:hover{color:var(--txt)}
+.bascule button.on{background:var(--accent);color:#fff}
+
+/* ---------- Modale ---------- */
+#voile{position:fixed;inset:0;background:#16191d66;display:none;
+  align-items:center;justify-content:center;z-index:200;padding:18px}
 #voile.on{display:flex}
-.modale{background:var(--fond2);border:1px solid var(--bord-clair);border-radius:14px;
-  width:100%;max-width:640px;max-height:90vh;overflow-y:auto;
-  box-shadow:0 30px 90px #000c}
-.modale header{padding:18px 22px;border-bottom:1px solid var(--bord);
-  display:flex;align-items:center;gap:12px}
-.modale header h3{font-size:17px;font-weight:600}
-.modale header .x{margin-left:auto;color:var(--txt3);font-size:22px;line-height:1}
+.modale{background:var(--carte);border:1px solid var(--bord);border-radius:var(--r);
+  width:100%;max-width:620px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 28px #16191d1f}
+.modale header{padding:15px 19px;border-bottom:1px solid var(--bord);display:flex;align-items:center;gap:12px}
+.modale header h3{font-size:16px;font-weight:600}
+.modale header .x{margin-left:auto;color:var(--txt3);font-size:21px;line-height:1}
 .modale header .x:hover{color:var(--txt)}
-.modale .corps{padding:22px}
-.modale footer{padding:16px 22px;border-top:1px solid var(--bord);
-  display:flex;gap:10px;justify-content:flex-end}
+.modale .corps{padding:19px}
+.modale footer{padding:14px 19px;border-top:1px solid var(--bord);
+  display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;background:var(--panneau)}
+
+/* ---------- Messages ---------- */
+.alerte{border:1px solid var(--bord);border-left:3px solid var(--orange);
+  background:var(--orange-pale);padding:10px 13px;border-radius:0 5px 5px 0;
+  font-size:12.5px;line-height:1.55;margin-bottom:14px;color:var(--txt)}
+.alerte.r{border-left-color:var(--rouge);background:var(--rouge-pale)}
+.alerte.v{border-left-color:var(--vert);background:var(--vert-pale)}
+.alerte.c{border-left-color:var(--bleu);background:var(--bleu-pale)}
+.vide{text-align:center;padding:34px 18px;color:var(--txt3);font-size:13px}
+.vide .ic{display:none}
+#toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,80px);
+  background:var(--txt);color:#fff;padding:11px 18px;border-radius:5px;
+  box-shadow:0 6px 20px #16191d33;transition:.25s;z-index:300;max-width:90vw;
+  text-align:center;font-size:13.5px}
+#toast.on{transform:translate(-50%,0)}
+#toast.err{background:var(--rouge)}
+#toast.ok{background:var(--vert)}
+.ligne-sep{height:1px;background:var(--bord);margin:15px 0}
+.puce-cat{font-size:11px;color:var(--txt3);letter-spacing:.3px}
+.dispo-ok{color:var(--vert);font-weight:600}
+.dispo-bas{color:var(--orange);font-weight:600}
+.dispo-non{color:var(--rouge);font-weight:600}
+.jauge{height:4px;background:var(--bord);border-radius:2px;overflow:hidden;margin-top:5px}
+.jauge i{display:block;height:100%}
+
+/* ---------- Étapes de saisie ---------- */
+.etiq{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin-bottom:13px}
+.etiq-n{width:20px;height:20px;border-radius:3px;flex:0 0 auto;background:var(--panneau);
+  border:1px solid var(--bord-clair);color:var(--txt2);font-size:11.5px;font-weight:600;
+  display:flex;align-items:center;justify-content:center}
+.etiq-c{background:var(--panneau);border:1px solid var(--bord-clair);color:var(--txt2);
+  font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:9px}
+
+.ruban{display:flex;align-items:center;margin-bottom:18px;flex-wrap:wrap;
+  border:1px solid var(--bord);border-radius:var(--r);background:var(--carte);overflow:hidden}
+.ruban-e{display:flex;align-items:center;gap:8px;padding:10px 16px;color:var(--txt3);
+  font-size:13px;flex:1;justify-content:center;border-right:1px solid var(--bord)}
+.ruban-e:last-child{border-right:none}
+.ruban-e.actif{color:var(--accent);font-weight:600;background:var(--accent-pale)}
+.ruban-e.fait{color:var(--txt2)}
+.ruban-n{width:19px;height:19px;border-radius:50%;background:var(--panneau);
+  border:1px solid var(--bord-clair);color:inherit;display:flex;align-items:center;
+  justify-content:center;font-size:11px;font-weight:600;flex:0 0 auto}
+.ruban-e.actif .ruban-n{background:var(--accent);border-color:var(--accent);color:#fff}
+.ruban-e.fait .ruban-n{background:var(--vert-pale);border-color:#bbf7d0;color:var(--vert)}
+.ruban-t{display:none}
+.nav-etape{display:flex;gap:10px;justify-content:space-between;align-items:center;
+  margin-top:18px;padding-top:14px;border-top:1px solid var(--bord)}
+.nav-etape .btn{min-width:140px}
+
+/* ---------- Matériel retenu ---------- */
+.sel{border:1px solid var(--bord);border-radius:5px;padding:11px 13px;margin-bottom:8px}
+.sel:last-child{margin-bottom:0}
+.sel-tete{display:flex;align-items:flex-start;gap:10px}
+.sel-nom{flex:1;min-width:0;font-weight:600;font-size:13.5px;line-height:1.3}
+.sel-ref{display:block;font-size:11px;color:var(--txt3);font-weight:400;margin-top:2px}
+.sel-x{flex:0 0 auto}
+.sel-bas{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
+.pas{display:flex;align-items:center;border:1px solid var(--bord-clair);border-radius:5px;overflow:hidden}
+.pas-b{width:34px;height:32px;font-size:17px;color:var(--txt2);
+  display:flex;align-items:center;justify-content:center;background:var(--carte)}
+.pas-b:hover:not(:disabled){background:var(--panneau);color:var(--accent)}
+.pas-b:disabled{opacity:.3;cursor:not-allowed}
+.pas-v{min-width:42px;text-align:center;font-weight:600;font-size:14px;
+  font-variant-numeric:tabular-nums;border-left:1px solid var(--bord);border-right:1px solid var(--bord)}
+.sel-tot{text-align:right;font-weight:600;font-size:14px;white-space:nowrap}
+.sel-det{display:block;font-size:11px;color:var(--txt3);font-weight:400;margin-top:1px}
+
+/* ---------- Sélecteur d'articles ---------- */
+.puces{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px}
+.puce{padding:5px 11px;border-radius:4px;border:1px solid var(--bord-clair);
+  background:var(--carte);color:var(--txt2);font-size:12.5px;white-space:nowrap}
+.puce:hover{border-color:var(--txt3);color:var(--txt)}
+.puce.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.puce.raz{color:var(--txt3)}
+.liste-art{max-height:280px;overflow-y:auto;border:1px solid var(--bord);
+  border-radius:5px;-webkit-overflow-scrolling:touch}
+.art{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;
+  border-bottom:1px solid var(--bord);text-align:left;background:var(--carte)}
+.art:last-child{border-bottom:none}
+.art:hover:not(:disabled){background:var(--accent-pale)}
+.art:disabled{opacity:.45;cursor:not-allowed}
+.art-txt{flex:1;min-width:0}
+.art-nom{display:block;font-weight:600;font-size:13px;line-height:1.3}
+.art-sous{display:block;font-size:11.5px;color:var(--txt3);margin-top:1px}
+.art-deja{background:var(--panneau);border:1px solid var(--bord-clair);color:var(--txt2);
+  font-size:11.5px;font-weight:600;padding:1px 8px;border-radius:9px;flex:0 0 auto}
+.art-plus{width:24px;height:24px;border-radius:4px;border:1px solid var(--bord-clair);
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  font-size:15px;color:var(--txt2)}
+.art:hover:not(:disabled) .art-plus{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ---------- Photos ---------- */
+.vignette{width:38px;height:38px;flex:0 0 auto;border-radius:4px;object-fit:cover;
+  background:var(--panneau);border:1px solid var(--bord)}
+img.vignette{cursor:zoom-in}
+.vide-photo{display:none}
+.avec-photo{display:flex;align-items:center;gap:10px}
+.apercu-photo{display:flex;align-items:center;gap:11px;margin-top:9px}
+.apercu-photo img{width:84px;height:84px;object-fit:cover;border-radius:5px;border:1px solid var(--bord)}
+
+/* ---------- Fiches du dépôt ---------- */
+.job{border:1px solid var(--bord);border-radius:5px;padding:12px 14px;margin-bottom:8px}
+.job:last-child{margin-bottom:0}
+.job-tete{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:6px}
+.job-num{font-variant-numeric:tabular-nums;font-size:11.5px;color:var(--txt3)}
+.job-qte{margin-left:auto;background:var(--panneau);border:1px solid var(--bord-clair);
+  color:var(--txt2);font-size:11.5px;font-weight:600;padding:1px 9px;border-radius:9px;white-space:nowrap}
+.job-client{font-size:15px;font-weight:600;margin-bottom:5px;line-height:1.3}
+.job-info{color:var(--txt2);font-size:12.5px;line-height:1.65}
+.job-info b{color:var(--txt)}
+.job-actions{display:flex;gap:8px;margin-top:11px}
+.job-actions .btn{flex:1;padding:8px 12px}
+
+.code-secours{font-family:ui-monospace,monospace;font-size:23px;font-weight:600;letter-spacing:2px;
+  text-align:center;padding:15px 10px;margin:14px 0;border-radius:5px;
+  background:var(--panneau);border:1px dashed var(--bord-clair);color:var(--txt);
+  user-select:all;word-break:break-all}
+
+.scenario{counter-reset:e}
+.scenario li{margin:0 0 10px 0;padding-left:28px;position:relative;line-height:1.55;
+  list-style:none;font-size:13.5px}
+.scenario li::before{counter-increment:e;content:counter(e);position:absolute;left:0;top:0;
+  width:19px;height:19px;border-radius:3px;background:var(--panneau);
+  border:1px solid var(--bord-clair);color:var(--txt2);font-size:11px;font-weight:600;
+  display:flex;align-items:center;justify-content:center}
+
+.deux-col{grid-template-columns:1fr 340px;align-items:start}
+
+/* ---------- Barre du haut (téléphone) ---------- */
+#barre{display:none}
 
 /* =====================================================================
-   FACTURE — document sur fond blanc, pensé pour l'impression A4
+   PROFORMA / FACTURE — le document reste identique à l'impression
    ===================================================================== */
-#voile-facture{position:fixed;inset:0;background:#000000d0;backdrop-filter:blur(3px);
-  display:none;align-items:flex-start;justify-content:center;z-index:250;
-  padding:20px;overflow-y:auto}
+#voile-facture{position:fixed;inset:0;background:#16191d99;display:none;
+  align-items:flex-start;justify-content:center;z-index:250;padding:18px;overflow-y:auto}
 #voile-facture.on{display:flex}
 #facture-boite{width:100%;max-width:820px}
-#facture-barre{display:flex;gap:10px;justify-content:flex-end;margin-bottom:12px}
-#facture{background:#fff;color:#1a1a1a;padding:38px 40px;border-radius:6px;
-  font-size:13px;line-height:1.5;box-shadow:0 24px 70px #000a}
-#facture img{width:66px;height:66px;border-radius:50%;flex:0 0 auto}
-.fac-tete{display:flex;justify-content:space-between;gap:26px;
-  padding-bottom:20px;border-bottom:2px solid #1a1a1a;margin-bottom:22px}
-.fac-emet{display:flex;gap:15px;align-items:flex-start}
-.fac-nom{font-size:19px;font-weight:800;letter-spacing:.6px;margin-bottom:3px}
-.fac-p{color:#555;font-size:11.5px;line-height:1.55}
-.fac-lab{font-size:10px;letter-spacing:1.3px;text-transform:uppercase;
-  color:#888;font-weight:700;margin-bottom:4px}
-.fac-fort{font-weight:700;font-size:14px;margin-bottom:2px}
+#facture-barre{display:flex;gap:9px;justify-content:flex-end;margin-bottom:11px}
+#facture{background:#fff;color:#16191d;padding:34px 36px;border-radius:4px;
+  font-size:12.5px;line-height:1.5;box-shadow:0 8px 30px #16191d33}
+#facture img,#proforma-apercu img{width:58px;height:58px;border-radius:4px;flex:0 0 auto;object-fit:cover}
+.fac-tete{display:flex;justify-content:space-between;gap:24px;
+  padding-bottom:16px;border-bottom:2px solid #16191d;margin-bottom:18px}
+.fac-emet{display:flex;gap:13px;align-items:flex-start}
+.fac-nom{font-size:17px;font-weight:700;letter-spacing:.4px;margin-bottom:2px}
+.fac-p{color:#5a636e;font-size:11px;line-height:1.5}
+.fac-lab{font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:#8a929c;
+  font-weight:700;margin-bottom:3px}
+.fac-fort{font-weight:700;font-size:13px;margin-bottom:2px}
 .fac-ref{text-align:right;flex:0 0 auto}
-.fac-titre{font-size:25px;font-weight:800;letter-spacing:3px;color:#c2185b}
-.fac-num{font-size:15px;font-weight:700;margin:2px 0 6px}
-.fac-parties{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-bottom:22px}
-/* Bloc client de la proforma : une information par ligne, comme le modèle */
-.fac-client{border:1px solid #e3e3ea;border-radius:6px;padding:12px 15px;margin-bottom:20px;
-  font-size:12.5px;line-height:2}
-.fc-l{display:inline-block;min-width:150px;color:#777;font-size:10.5px;
-  letter-spacing:.9px;text-transform:uppercase}
-.fl-ref{display:block;font-size:10px;color:#999;letter-spacing:.6px;text-transform:uppercase}
-.cg-titre{font-size:10.5px;font-weight:800;letter-spacing:1px;color:#1a1a1a;
-  margin-bottom:8px;text-transform:uppercase}
-.cg{font-size:10.5px;color:#555;line-height:1.55;margin-bottom:5px}
-.cg b{color:#1a1a1a}
-.cg-vide{background:#fff6d8;border-left:2px solid #e0a800;padding:4px 8px}
-
-/* Navigation entre étapes de saisie */
-.nav-etape{display:flex;gap:10px;justify-content:space-between;align-items:center;
-  margin-top:20px;padding-top:16px;border-top:1px solid var(--bord)}
-.nav-etape .btn{min-width:150px}
-#proforma-apercu{background:#fff;color:#1a1a1a;padding:26px 24px;font-size:12px;line-height:1.5}
-#proforma-apercu .fac-titre{font-size:20px}
-@media(max-width:820px){
-  .nav-etape{flex-direction:column-reverse}
-  .nav-etape .btn{width:100%}
-  .fc-l{min-width:0;display:block;line-height:1.3;margin-top:5px}
-  .fac-client{line-height:1.5}
-  #proforma-apercu{padding:18px 15px;font-size:11.5px}
-}
-.fac-lignes-wrap{margin-bottom:22px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.fac-titre{font-size:22px;font-weight:700;letter-spacing:2px;color:var(--accent)}
+.fac-num{font-size:13px;font-weight:600;margin:2px 0 5px}
+.fac-parties{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:18px}
+.fac-client{border:1px solid #e3e6ea;border-radius:4px;padding:11px 14px;margin-bottom:17px;
+  font-size:12px;line-height:1.9}
+.fc-l{display:inline-block;min-width:150px;color:#8a929c;font-size:9.5px;
+  letter-spacing:.8px;text-transform:uppercase}
+.fl-ref{display:block;font-size:9.5px;color:#9aa2ad;letter-spacing:.5px;text-transform:uppercase}
+.fac-lignes-wrap{margin-bottom:18px;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .fac-lignes{width:100%;border-collapse:collapse;min-width:470px}
-.fac-lignes th{background:#f2f2f5;color:#444;font-size:10px;letter-spacing:.9px;
-  text-transform:uppercase;padding:9px 10px;border:none;text-align:left}
+.fac-lignes th{background:#f2f4f7;color:#5a636e;font-size:9.5px;letter-spacing:.6px;
+  text-transform:uppercase;padding:8px 9px;border:none;text-align:left}
 .fac-lignes th.num,.fac-lignes td.num{text-align:right}
-.fac-lignes td{padding:8px 10px;border-bottom:1px solid #e8e8ee;font-size:12.5px}
-.fac-bas{display:grid;grid-template-columns:1fr 300px;gap:26px;align-items:start}
+.fac-lignes td{padding:7px 9px;border-bottom:1px solid #eceff3;font-size:12px}
+.fac-bas{display:grid;grid-template-columns:1fr 290px;gap:24px;align-items:start}
 .fac-mentions .fac-p{margin-bottom:2px}
 .fac-totaux{width:100%;border-collapse:collapse}
-.fac-totaux td{padding:6px 10px;font-size:12.5px;border:none}
-.fac-totaux .ft-lab{color:#555}
+.fac-totaux td{padding:5px 9px;font-size:12px;border:none}
+.fac-totaux .ft-lab{color:#5a636e}
 .fac-totaux .ft-val{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-.fac-totaux .ft-sous td{border-top:1px solid #ccc;font-weight:700;color:#1a1a1a}
-.fac-totaux .ft-net td{border-top:2px solid #1a1a1a;font-size:15px;font-weight:800;
-  color:#c2185b;padding-top:9px}
-.fac-pied{margin-top:26px;padding-top:14px;border-top:1px solid #e0e0e6;
-  text-align:center;color:#888;font-size:10.5px}
+.fac-totaux .ft-sous td{border-top:1px solid #d5dae0;font-weight:700;color:#16191d}
+.fac-totaux .ft-net td{border-top:2px solid #16191d;font-size:14px;font-weight:700;
+  color:var(--accent);padding-top:8px}
+.fac-pied{margin-top:22px;padding-top:12px;border-top:1px solid #e3e6ea;
+  text-align:center;color:#8a929c;font-size:10px}
+.cg-titre{font-size:9.5px;font-weight:700;letter-spacing:.8px;color:#16191d;
+  margin-bottom:7px;text-transform:uppercase}
+.cg{font-size:10px;color:#5a636e;line-height:1.5;margin-bottom:4px}
+.cg b{color:#16191d}
+.cg-vide{background:#fffbeb;border-left:2px solid #b45309;padding:3px 7px}
+#proforma-apercu{background:#fff;color:#16191d;padding:24px 22px;font-size:11.5px;line-height:1.45}
+#proforma-apercu .fac-titre{font-size:18px}
 
 @media print{
   body{background:#fff!important}
   body > *{display:none!important}
-  #voile-facture{display:block!important;position:static;padding:0;background:none;
-    backdrop-filter:none;overflow:visible}
+  #voile-facture{display:block!important;position:static;padding:0;background:none;overflow:visible}
   #facture-barre{display:none!important}
   #facture-boite{max-width:none}
-  #facture{box-shadow:none;border-radius:0;padding:0;font-size:11.5pt}
+  #facture{box-shadow:none;border-radius:0;padding:0;font-size:11pt}
   .fac-lignes-wrap{overflow:visible!important}
   .fac-lignes{min-width:0;page-break-inside:avoid}
   @page{size:A4;margin:14mm}
 }
 
-/* ---------- Divers ---------- */
-.alerte{border-left:3px solid var(--orange);background:#f59e0b14;padding:12px 15px;
-  border-radius:0 8px 8px 0;font-size:13px;line-height:1.6;margin-bottom:16px}
-.alerte.r{border-color:var(--rouge);background:#ef444414}
-.alerte.v{border-color:var(--vert);background:#22c55e14}
-.alerte.c{border-color:var(--cyan);background:#22d3ee14}
-.vide{text-align:center;padding:46px 20px;color:var(--txt3)}
-.vide .ic{font-size:38px;display:block;margin-bottom:12px;opacity:.5}
-#toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,90px);
-  background:var(--fond2);border:1px solid var(--bord-clair);padding:13px 22px;
-  border-radius:10px;box-shadow:0 14px 40px #000b;transition:.3s;z-index:300;
-  max-width:90vw;text-align:center}
-#toast.on{transform:translate(-50%,0)}
-#toast.err{border-color:#ef4444;box-shadow:0 14px 40px #ef444433}
-#toast.ok{border-color:#22c55e;box-shadow:0 14px 40px #22c55e33}
-.ligne-sep{height:1px;background:var(--bord);margin:18px 0}
-.puce-cat{font-size:10.5px;color:var(--txt3);letter-spacing:1px;text-transform:uppercase}
-.dispo-ok{color:var(--vert);font-weight:600}
-.dispo-bas{color:var(--orange);font-weight:600}
-.dispo-non{color:var(--rouge);font-weight:600}
-.jauge{height:5px;background:#ffffff12;border-radius:3px;overflow:hidden;margin-top:6px}
-.jauge i{display:block;height:100%;border-radius:3px}
-.scenario{counter-reset:e}
-.scenario li{margin:0 0 11px 0;padding-left:34px;position:relative;line-height:1.55;
-  list-style:none;font-size:13.5px}
-.scenario li::before{counter-increment:e;content:counter(e);position:absolute;left:0;top:-1px;
-  width:23px;height:23px;border-radius:50%;background:linear-gradient(135deg,var(--rose),#c026d3);
-  color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
 /* =====================================================================
-   TELEPHONE — barre de titre en haut, onglets en bas, comme une vraie
-   application mobile. Le preparateur travaille au depot, sur son telephone.
+   TÉLÉPHONE
    ===================================================================== */
 @media(max-width:820px){
   #app.on{display:block}
-
-  /* --- Barre du haut --- */
-  #barre{
-    display:flex; align-items:center; gap:10px;
-    position:fixed; top:0; left:0; right:0; z-index:60;
-    height:calc(56px + env(safe-area-inset-top));
-    padding:env(safe-area-inset-top) 12px 0;
-    background:#0b0b16f2; backdrop-filter:blur(10px);
-    border-bottom:1px solid var(--bord);
-  }
-  #barre img{width:34px;height:34px;border-radius:50%;box-shadow:0 0 14px #ff2d7855;flex:0 0 auto}
-  #barre .t1{font-weight:700;letter-spacing:1.6px;font-size:12px;line-height:1.2}
-  #barre .t2{font-size:13px;color:var(--txt2);line-height:1.25;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:44vw}
-  #barre .compte{margin-left:auto;flex:0 0 auto}
-
-  /* --- La barre latérale disparaît : la navigation passe dans le menu --- */
   aside{display:none}
 
-  .barre-menu{
-    margin-left:auto; flex:0 0 auto; position:relative;
-    padding:9px 15px; border-radius:9px; font-size:13.5px; font-weight:600;
-    background:#ffffff12; border:1px solid var(--bord); color:var(--txt);
-  }
-  .barre-menu:active{background:#ffffff20}
-  #barre-pastille:not(:empty){
-    position:absolute; top:-6px; right:-6px; min-width:19px; padding:1px 6px;
-    background:var(--rose); color:#fff; font-size:10px; font-weight:700;
-    border-radius:20px; line-height:1.6;
-  }
+  #barre{display:flex;align-items:center;gap:10px;position:fixed;top:0;left:0;right:0;z-index:60;
+    height:calc(52px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 12px 0;
+    background:var(--carte);border-bottom:1px solid var(--bord)}
+  #barre img{width:28px;height:28px;border-radius:4px;object-fit:cover;flex:0 0 auto}
+  #barre .t1{font-weight:700;letter-spacing:1px;font-size:11px;line-height:1.2;color:var(--txt3)}
+  #barre .t2{font-size:14px;font-weight:600;line-height:1.2;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;max-width:46vw}
+  .barre-menu{margin-left:auto;flex:0 0 auto;position:relative;padding:7px 13px;
+    border-radius:5px;font-size:13px;font-weight:600;background:var(--carte);
+    border:1px solid var(--bord-clair);color:var(--txt)}
+  #barre-pastille:not(:empty){position:absolute;top:-5px;right:-5px;min-width:17px;padding:0 5px;
+    background:var(--accent);color:#fff;font-size:10px;font-weight:600;border-radius:9px;line-height:17px}
 
-  /* --- Contenu : plus rien en bas, la page respire --- */
-  main{padding:calc(68px + env(safe-area-inset-top)) 13px
-              calc(34px + env(safe-area-inset-bottom))}
-  .entete{margin-bottom:16px} .entete h2{font-size:20px}
+  #voile-nav{position:fixed;inset:0;z-index:80;display:none;background:#16191d66}
+  #voile-nav.on{display:block}
+  #menu-nav{position:absolute;left:0;right:0;top:calc(52px + env(safe-area-inset-top));
+    max-height:calc(100vh - 52px - env(safe-area-inset-top));overflow-y:auto;
+    background:var(--carte);border-bottom:1px solid var(--bord);
+    box-shadow:0 8px 24px #16191d29;padding:6px 0 calc(8px + env(safe-area-inset-bottom))}
+  .nav-e{display:flex;align-items:center;gap:11px;width:100%;padding:12px 17px;
+    color:var(--txt2);font-size:14px;text-align:left}
+  .nav-e .ic{display:none}
+  .nav-e:active{background:var(--panneau)}
+  .nav-e.actif{color:var(--accent);font-weight:600;background:var(--accent-pale)}
+  .nav-e .pastille{margin-left:auto;background:var(--accent);color:#fff;font-size:10.5px;
+    font-weight:600;padding:1px 7px;border-radius:9px}
+  .nav-sep{height:1px;background:var(--bord);margin:6px 17px}
+  .nav-qui{padding:4px 17px 9px}
+  .nav-qui .r{font-size:10.5px;color:var(--txt3);letter-spacing:1px}
+  .nav-qui .n{font-weight:600;font-size:15px;margin-top:1px}
+
+  main{padding:calc(62px + env(safe-area-inset-top)) 12px calc(28px + env(safe-area-inset-bottom))}
+  .entete{margin-bottom:14px} .entete h2{font-size:18px}
   .entete .droite{margin-left:0;width:100%}
   .entete .droite .btn{flex:1}
   .paire,.deux-col{grid-template-columns:1fr}
   .deux-col > div:last-child > .carte[style*="sticky"]{position:static!important}
-  .carte{padding:15px}
-  .stat .val{font-size:24px}
-  /* Safari iOS zoome sur tout champ dont le texte fait moins de 16 px : la
-     page se décale et il faut repincer à chaque saisie. 16 px l'en empêche. */
+  .carte{padding:14px}
   input,select,textarea{font-size:16px}
-  .champ input,.champ select,.champ textarea{padding:11px 12px}
-  /* Les tableaux restants défilent latéralement plutôt que d'écraser
-     chaque cellule sur trois lignes. */
-  th,td{padding:9px 10px;white-space:nowrap}
+  .champ input,.champ select,.champ textarea{padding:10px 11px}
+  th,td{padding:8px 9px;white-space:nowrap}
   .job-actions{flex-direction:column-reverse}
-  .job-actions .btn{width:100%;padding:11px 12px;font-size:13.5px}
-  .modale{max-height:92vh;border-radius:14px}
-  .modale .corps{padding:17px}
-  .modale footer{padding:13px 16px;flex-wrap:wrap}
-  .modale footer .btn{flex:1 0 auto}
-  /* Sur téléphone le message s'affiche en HAUT : en bas il recouvrait les
-     totaux de la fiche commande, qui sont justement ce qu'on vient de modifier. */
-  /* --- Menu déroulant de navigation --- */
-  #voile-nav{
-    position:fixed; inset:0; z-index:80; display:none;
-    background:#000000b8; backdrop-filter:blur(2px);
-  }
-  #voile-nav.on{display:block}
-  #menu-nav{
-    position:absolute; left:0; right:0;
-    top:calc(56px + env(safe-area-inset-top));
-    max-height:calc(100vh - 56px - env(safe-area-inset-top)); overflow-y:auto;
-    background:var(--fond2); border-bottom:1px solid var(--bord-clair);
-    box-shadow:0 18px 46px #000b; padding:8px 0 calc(10px + env(safe-area-inset-bottom));
-  }
-  .nav-e{
-    display:flex; align-items:center; gap:13px; width:100%;
-    padding:13px 18px; color:var(--txt2); font-size:14.5px; text-align:left;
-  }
-  .nav-e .ic{font-size:19px; width:24px; text-align:center; flex:0 0 auto}
-  .nav-e:active{background:#ffffff0d}
-  .nav-e.actif{color:#fff; font-weight:600;
-    background:linear-gradient(90deg,#ff2d7826,transparent);
-    box-shadow:inset 3px 0 0 var(--rose)}
-  .nav-e .pastille{margin-left:auto; background:var(--rose); color:#fff;
-    font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:20px}
-  .nav-sep{height:1px; background:var(--bord); margin:8px 18px}
-  .nav-qui{padding:4px 18px 10px}
-  .nav-qui .r{font-size:10.5px; color:var(--txt3); letter-spacing:1.5px}
-  .nav-qui .n{font-weight:700; font-size:15px; margin-top:2px}
-
-  #toast{top:calc(62px + env(safe-area-inset-top));bottom:auto;
-    transform:translate(-50%,-150px);max-width:calc(100vw - 26px);font-size:13.5px}
+  .job-actions .btn{width:100%;padding:10px 12px}
+  .nav-etape{flex-direction:column-reverse}
+  .nav-etape .btn{width:100%}
+  .ruban{flex-wrap:nowrap;overflow-x:auto}
+  .ruban-e{flex:0 0 auto;padding:9px 13px;font-size:12.5px}
+  .modale{max-height:92vh}
+  .modale .corps{padding:16px}
+  .modale footer{padding:12px 15px}
+  #toast{top:calc(58px + env(safe-area-inset-top));bottom:auto;
+    transform:translate(-50%,-140px);max-width:calc(100vw - 24px)}
   #toast.on{transform:translate(-50%,0)}
 
-  /* Facture sur téléphone : tout se met en colonne, seul le tableau défile */
-  #voile-facture{padding:12px}
-  #facture{padding:22px 17px;font-size:12px}
-  #facture img{width:52px;height:52px}
-  .fac-tete{flex-direction:column;gap:15px;padding-bottom:16px;margin-bottom:18px}
+  #voile-facture{padding:10px}
+  #facture{padding:20px 15px;font-size:11.5px}
+  #facture img,#proforma-apercu img{width:46px;height:46px}
+  .fac-tete{flex-direction:column;gap:13px;padding-bottom:14px;margin-bottom:15px}
   .fac-ref{text-align:left}
-  .fac-titre{font-size:21px}
-  .fac-parties,.fac-bas{grid-template-columns:1fr;gap:16px}
+  .fac-titre{font-size:19px}
+  .fac-parties,.fac-bas{grid-template-columns:1fr;gap:15px}
   .fac-lignes th,.fac-lignes td{white-space:nowrap}
+  .fc-l{min-width:0;display:block;line-height:1.3;margin-top:4px}
+  .fac-client{line-height:1.5}
+  #proforma-apercu{padding:16px 13px;font-size:11px}
 
-  /* --- Connexion --- */
-  #login{justify-content:flex-start;overflow-y:auto;
-    padding:calc(26px + env(safe-area-inset-top)) 16px 34px;gap:20px}
-  #login img{width:136px}
-  #login h1{font-size:20px;letter-spacing:2.5px}
-  #login p{margin-top:-12px}
-  .roles{flex-direction:column;width:100%;align-items:center}
-  .role{width:100%;max-width:360px;padding:16px}
-  .role .ic{font-size:25px;margin-bottom:7px}
+  #login{justify-content:flex-start;padding-top:calc(30px + env(safe-area-inset-top))}
+  #login img{width:72px;height:72px}
+  #login h1{font-size:17px;letter-spacing:2px}
 }
+
 </style>
 </head>
 <body>
@@ -542,21 +475,21 @@ th.num{text-align:right}
   <p>Gestion des locations de matériel événementiel — DC EVENT</p>
   <div class="roles" id="etape-roles">
     <button class="role" onclick="demanderMdp('ADMIN')">
-      <span class="ic">🔑</span><span class="nom">ADMIN</span>
+      <span class="nom">ADMIN</span>
       <span class="desc">Valide les retraits, annulations et remises. Voit tout.</span>
     </button>
     <button class="role" onclick="demanderMdp('MANAGER')">
-      <span class="ic">📋</span><span class="nom">MANAGER</span>
+      <span class="nom">MANAGER</span>
       <span class="desc">Crée les devis, réserve le matériel, facture les clients.</span>
     </button>
     <button class="role" onclick="demanderMdp('PREPARATEUR')">
-      <span class="ic">📦</span><span class="nom">PRÉPARATEUR</span>
+      <span class="nom">PRÉPARATEUR</span>
       <span class="desc">Sort le matériel du dépôt et contrôle les retours.</span>
     </button>
   </div>
 
   <div id="etape-mdp">
-    <div class="mdp-ic" id="mdp-ic">🔑</div>
+    <div class="mdp-ic" id="mdp-ic"></div>
     <div class="mdp-role" id="mdp-role">ADMIN</div>
     <div class="mdp-qui" id="mdp-qui">M. Bamba</div>
     <div id="mdp-bio"></div>
@@ -957,16 +890,16 @@ const UTILISATEURS = {
   PREPARATEUR: { nom:'Sery', role:'PREPARATEUR' }
 };
 const MENU = [
-  { cle:'tableau',     ic:'📊', txt:'Tableau de bord', roles:['ADMIN','MANAGER','PREPARATEUR'] },
-  { cle:'commandes',   ic:'🧾', txt:'Commandes',       roles:['ADMIN','MANAGER'] },
-  { cle:'catalogue',   ic:'📚', txt:'Catalogue',       roles:['ADMIN','MANAGER','PREPARATEUR'] },
-  { cle:'preparation', ic:'📦', txt:'Préparation',     roles:['ADMIN','PREPARATEUR'] },
-  { cle:'validations', ic:'🔐', txt:'Validations',     roles:['ADMIN','MANAGER'] },
-  { cle:'facturation', ic:'💰', txt:'Facturation',     roles:['ADMIN','MANAGER'] },
-  { cle:'journal',     ic:'🕓', txt:'Traçabilité',     roles:['ADMIN'] },
-  { cle:'securite',    ic:'🔒', txt:'Mots de passe',   roles:['ADMIN'] },
-  { cle:'serveur',     ic:'☁️', txt:'Serveur',         roles:['ADMIN'] },
-  { cle:'demo',        ic:'🎬', txt:'Scénario démo',   roles:['ADMIN','MANAGER','PREPARATEUR'] }
+  { cle:'tableau',     ic:'', txt:'Tableau de bord', roles:['ADMIN','MANAGER','PREPARATEUR'] },
+  { cle:'commandes',   ic:'', txt:'Commandes',       roles:['ADMIN','MANAGER'] },
+  { cle:'catalogue',   ic:'', txt:'Catalogue',       roles:['ADMIN','MANAGER','PREPARATEUR'] },
+  { cle:'preparation', ic:'', txt:'Préparation',     roles:['ADMIN','PREPARATEUR'] },
+  { cle:'validations', ic:'', txt:'Validations',     roles:['ADMIN','MANAGER'] },
+  { cle:'facturation', ic:'', txt:'Facturation',     roles:['ADMIN','MANAGER'] },
+  { cle:'journal',     ic:'', txt:'Traçabilité',     roles:['ADMIN'] },
+  { cle:'securite',    ic:'', txt:'Mots de passe',   roles:['ADMIN'] },
+  { cle:'serveur',     ic:'', txt:'Serveur',         roles:['ADMIN'] },
+  { cle:'demo',        ic:'', txt:'Scénario démo',   roles:['ADMIN','MANAGER','PREPARATEUR'] }
 ];
 
 /* =========================================================================
@@ -1286,7 +1219,7 @@ function demanderMdp(role){
   const u = UTILISATEURS[role];
   $('#etape-roles').style.display = 'none';
   $('#etape-mdp').classList.add('on');
-  $('#mdp-ic').textContent   = { ADMIN:'🔑', MANAGER:'📋', PREPARATEUR:'📦' }[role];
+  $('#mdp-ic').textContent   = '';
   $('#mdp-role').textContent = role;
   $('#mdp-qui').textContent  = u.nom;
   $('#mdp-champ').value = '';
@@ -1296,7 +1229,7 @@ function demanderMdp(role){
   const bio = S.biometrie && S.biometrie[role];
   $('#mdp-bio').innerHTML = bio
     ? `<button class="bio" onclick="connexionEmpreinte('${role}')">
-         <span class="ic">👆</span>Déverrouiller avec l'empreinte</button>
+         Déverrouiller avec l'empreinte</button>
        <div class="ou">OU MOT DE PASSE</div>` : '';
 
   // Récupération : réservée à l'ADMIN, et seulement si un code existe
@@ -1422,16 +1355,16 @@ function ouvrirNav(){
     }).join('')}
     <div class="nav-sep"></div>
     <button class="nav-e" onclick="fermerNav();formMdp('${U.role}')">
-      <span class="ic">🔒</span><span>Changer mon mot de passe</span></button>
+      <span>Changer mon mot de passe</span></button>
     ${(S.biometrie && S.biometrie[U.role])
       ? `<button class="nav-e" onclick="fermerNav();desactiverEmpreinte('${U.role}')">
-           <span class="ic">👆</span><span>Désactiver mon empreinte</span></button>`
+           <span>Désactiver mon empreinte</span></button>`
       : `<button class="nav-e" onclick="fermerNav();activerEmpreinte('${U.role}')">
-           <span class="ic">👆</span><span>Activer mon empreinte</span></button>`}
+           <span>Activer mon empreinte</span></button>`}
     <button class="nav-e" onclick="fermerNav();deconnexion()">
-      <span class="ic">🔄</span><span>Changer d'utilisateur</span></button>
+      <span>Changer d'utilisateur</span></button>
     <button class="nav-e" onclick="fermerNav();reinitialiser()">
-      <span class="ic">♻️</span><span>Réinitialiser la démo</span></button>`;
+      <span>Réinitialiser la démo</span></button>`;
   $('#voile-nav').classList.add('on');
 }
 function fermerNav(){ $('#voile-nav').classList.remove('on'); }
@@ -1478,7 +1411,7 @@ function vueTableau(){
       <button class="btn p" onclick="nouvelleCommande()">+ Nouvelle commande</button></div>` : ''}
   </div>
 
-  ${retard.length ? `<div class="alerte r"><b>⚠ ${retard.length} commande(s) en retard de retour.</b>
+  ${retard.length ? `<div class="alerte r"><b>${retard.length} commande(s) en retard de retour.</b>
       Du matériel est toujours dehors alors que la date de fin est passée :
       ${retard.map(c=>esc(c.num)+' ('+esc(c.client)+')').join(', ')}.</div>` : ''}
   ${attente.length && U.role==='ADMIN' ? `<div class="alerte">
@@ -1588,7 +1521,7 @@ function vueCatalogue(){
           <td><div class="avec-photo">
             ${a.photo ? `<img class="vignette" src="${a.photo}" alt=""
                           onclick="voirPhoto('${a.id}')">`
-                      : `<span class="vignette vide-photo">📷</span>`}
+                      : `<span class="vignette vide-photo"></span>`}
             <span><b>${esc(a.nom)}</b><div class="puce-cat">${esc(a.cat)}</div></span>
           </div></td>
           <td class="num">${a.qte}</td>
@@ -1597,8 +1530,8 @@ function vueCatalogue(){
           <td class="num">${fcfa(a.prix)}</td>
           <td><div class="jauge"><i style="width:${pc}%;background:${coul}"></i></div></td>
           ${gere?`<td style="text-align:right;white-space:nowrap">
-            <button class="btn mini" title="Modifier" onclick="formArticle('${a.id}')">✎</button>
-            <button class="btn mini r" title="Supprimer" onclick="supprimerArticle('${a.id}')">✕</button></td>`:''}
+            <button class="btn mini"  onclick="formArticle('${a.id}')">Modifier</button>
+            <button class="btn mini r" title="Supprimer" onclick="supprimerArticle('${a.id}')">Retirer</button></td>`:''}
         </tr>`;
       }).join('')}
     </tbody></table></div>
@@ -2091,7 +2024,7 @@ function selecteurArticles(b){
       ${cats.map(c=>`<button class="puce ${rechArt.cat===c?'on':''}"
         onclick="filtreCat('${esc(c)}')">${esc(c)}</button>`).join('')}
       ${(rechArt.q||rechArt.cat)
-        ? `<button class="puce raz" onclick="videRecherche()">✕ Tout afficher</button>` : ''}
+        ? `<button class="puce raz" onclick="videRecherche()">Tout afficher</button>` : ''}
     </div>
     <div class="liste-art">
       ${trouves.map(a=>{
@@ -2101,7 +2034,7 @@ function selecteurArticles(b){
         return `<button class="art ${epuise?'ko':''}" ${epuise?'disabled':''}
           onclick="ajouterLigne('${a.id}')">
           ${a.photo ? `<img class="vignette" src="${a.photo}" alt="">`
-                    : `<span class="vignette vide-photo">📷</span>`}
+                    : `<span class="vignette vide-photo"></span>`}
           <span class="art-txt">
             <span class="art-nom">${esc(a.nom)}</span>
             <span class="art-sous">${esc(a.ref)} · ${fcfa(a.prix)}/jour ·
@@ -2141,18 +2074,18 @@ function vueEtapeClient(){
     <h3 class="etiq"><span class="etiq-n">2</span>Les dates</h3>
     <div class="champ"><label>Date de réservation</label>
       <input type="date" value="${b.reservation}" onchange="majBrouillon('reservation',this.value)">
-      <div class="puce-cat" style="margin-top:5px">Jour où le client engage la commande</div></div>
+      </div>
     <div class="paire">
       <div class="champ"><label>Date de l'événement <i class="req">*</i></label>
         <input type="date" value="${b.debut}" onchange="majBrouillon('debut',this.value)">
-        <div class="puce-cat" style="margin-top:5px">Livraison : jour où le matériel doit être sur place</div></div>
+        </div>
       <div class="champ"><label>Heure de livraison</label>
         <input type="time" value="${esc(b.heure||'')}" onchange="majBrouillon('heure',this.value)">
-        <div class="puce-cat" style="margin-top:5px">Portée sur la proforma</div></div>
+        </div>
     </div>
     <div class="champ"><label>Date de récupération <i class="req">*</i></label>
       <input type="date" value="${b.fin}" min="${b.debut}" onchange="majBrouillon('fin',this.value)">
-      <div class="puce-cat" style="margin-top:5px">Jour où il revient au dépôt</div></div>
+      </div>
 
     <div style="color:var(--txt2);font-size:13px">Durée facturée : <b>${t.jours} jour(s)</b>
       — le matériel est immobilisé de la livraison à la récupération</div>
@@ -2185,7 +2118,7 @@ function vueEtapeMateriel(){
               <div class="sel-nom">${esc(l.nom)}
                 <span class="sel-ref">${esc(l.ref)} · ${fcfa(l.prix)}/jour · ${d} dispo.</span></div>
               <button class="btn mini r sel-x" title="Retirer"
-                onclick="retirerLigneBrouillon('${l.articleId}')">✕</button>
+                onclick="retirerLigneBrouillon('${l.articleId}')">Retirer</button>
             </div>
             <div class="sel-bas">
               <div class="pas">
@@ -2200,7 +2133,7 @@ function vueEtapeMateriel(){
             </div>
           </div>`;
         }).join('') || `<div class="vide" style="padding:26px">
-            <span class="ic">🛒</span>Rien pour l'instant — choisissez du matériel ci-dessus</div>`}
+            Rien pour l'instant — choisissez du matériel ci-dessus</div>`}
       </div>
     </div>
 
@@ -2218,10 +2151,7 @@ function vueEtapeMateriel(){
       <div class="ligne-sep"></div>
       <button class="btn" style="width:100%;margin-bottom:9px" onclick="etape(1)">← Retour au client</button>
       <button class="btn p" style="width:100%" onclick="etape(3)">Suivant — Montants →</button>
-      <div class="alerte c" style="margin:16px 0 0">
-        L'étape suivante fixe la <b>remise</b>, le <b>transport</b>, la <b>caution</b>
-        et l'<b>avance</b>. La proforma se relit ensuite avant d'engager.
-      </div>
+      
     </div>
   </div>`;
 }
@@ -2401,10 +2331,7 @@ function vueEtapeProforma(){
       <button class="btn" style="width:100%;margin-bottom:9px"
         onclick="enregistrerBrouillon('DEVIS')">Enregistrer en devis</button>
       <button class="btn" style="width:100%" onclick="etape(3)">← Retour aux montants</button>
-      <div class="alerte c" style="margin:16px 0 0">
-        Un <b>devis</b> ne bloque ni le stock ni l'avance. Une <b>réservation</b>
-        retire le matériel de la disponibilité sur ces dates.
-      </div>
+      
     </div>
   </div>`;
 }
@@ -2467,7 +2394,7 @@ function ouvrirCommande(id){
             ${l.remise?`<div class="puce-cat" style="color:var(--orange)">remise ${l.remise}%</div>`:''}</td>` : ''}
           ${peutModifier && argent
             ? `<td><button class="btn mini r" title="Retirer cet article"
-                 onclick="demanderRetrait('${c.id}','${l.articleId}')">✕</button></td>` : ''}
+                 onclick="demanderRetrait('${c.id}','${l.articleId}')">Retirer</button></td>` : ''}
         </tr>`;
       }).join('')}
     </tbody></table>
@@ -2617,9 +2544,9 @@ function vuePreparation(){
             <span class="job-qte">${c.lignes.reduce((s,l)=>s+l.qte,0)} pièces</span>
           </div>
           <div class="job-client">${esc(c.client)}</div>
-          <div class="job-info">📍 ${esc(c.lieu||'lieu non précisé')}</div>
-          <div class="job-info">🎉 Événement le <b>${frDate(c.debut)}</b></div>
-          <div class="job-info">↩️ Récupération le <b>${frDate(c.fin)}</b></div>
+          <div class="job-info"><span class="puce-cat">Lieu</span> ${esc(c.lieu||'lieu non précisé')}</div>
+          <div class="job-info"><span class="puce-cat">Événement</span> <b>${frDate(c.debut)}</b></div>
+          <div class="job-info"><span class="puce-cat">Récupération</span> <b>${frDate(c.fin)}</b></div>
           <div class="job-actions">
             <button class="btn mini" onclick="ouvrirCommande('${c.id}')">Détail</button>
             <button class="btn mini ${couleur}" onclick="${action}('${c.id}')">${libelle}</button>
@@ -2633,9 +2560,9 @@ function vuePreparation(){
     <div><h2>Préparation & logistique</h2>
       <div class="sous">Bons de sortie, départs et contrôle des retours</div></div>
   </div>
-  ${bloc('📋 À préparer au dépôt', aPreparer, 'marquerPrepare', 'Matériel sorti', 'c')}
-  ${bloc('🚚 Prêt à partir', aLivrer, 'marquerLivre', 'Confirmer le départ', 'p')}
-  ${bloc('⏳ Matériel dehors', dehors, 'saisirRetour', 'Saisir le retour', 'v')}`;
+  ${bloc('À préparer au dépôt', aPreparer, 'marquerPrepare', 'Matériel sorti', 'c')}
+  ${bloc('Prêt à partir', aLivrer, 'marquerLivre', 'Confirmer le départ', 'p')}
+  ${bloc('Matériel dehors', dehors, 'saisirRetour', 'Saisir le retour', 'v')}`;
 }
 
 function marquerPrepare(id){
@@ -2735,7 +2662,7 @@ function vueValidations(){
   </div>
   ${!admin?`<div class="alerte">Vous consultez vos demandes. Seul l'ADMIN peut les trancher.</div>`:''}
   <h3 style="font-size:15px;margin:0 0 12px">En attente (${attente.length})</h3>
-  ${attente.map(carte).join('') || '<div class="carte vide"><span class="ic">✅</span>Aucune demande en attente</div>'}
+  ${attente.map(carte).join('') || '<div class="carte vide">Aucune demande en attente</div>'}
   ${traitees.length?`<h3 style="font-size:15px;margin:26px 0 12px">Historique (${traitees.length})</h3>
     ${traitees.map(carte).join('')}`:''}`;
 }
@@ -3087,7 +3014,7 @@ function vueSecurite(){
   ${(() => {
     const faibles = Object.entries(S.motsDePasse).filter(([,h])=>ancienFormat(h)).map(([r])=>r);
     return faibles.length
-      ? `<div class="alerte r">⚠ ${faibles.join(', ')} : empreinte à l'ancien format,
+      ? `<div class="alerte r">${faibles.join(', ')} : empreinte à l'ancien format,
            cassable rapidement si l'appareil est volé. Elle sera renforcée
            automatiquement à la prochaine connexion de ce profil.</div>`
       : `<div class="alerte v">✓ Toutes les empreintes utilisent la dérivation lente
@@ -3095,10 +3022,7 @@ function vueSecurite(){
            ne se casse plus par essais successifs en un temps raisonnable.</div>`;
   })()}
 
-  <div class="alerte">Les mots de passe sont conservés sous forme d'<b>empreinte salée</b>,
-    jamais en clair, et le compteur d'essais survit au redémarrage de l'application.
-    La vérification reste locale à l'appareil : elle sépare les rôles sur un téléphone
-    partagé, elle ne remplace pas un contrôle côté serveur.</div>
+  
 
   <div class="carte" style="margin-bottom:16px">
     ${['ADMIN','MANAGER','PREPARATEUR'].map(r=>{
@@ -3112,14 +3036,14 @@ function vueSecurite(){
         </div>
         <div class="sel-bas" style="margin-top:8px;flex-wrap:wrap;gap:8px">
           <span style="font-size:12.5px;color:${perso?'var(--vert)':'var(--orange)'}">
-            ${perso ? '✓ mot de passe personnalisé'
-                    : "⚠ mot de passe d'origine, jamais modifié"}</span>
+            ${perso ? 'Mot de passe personnalisé'
+                    : "mot de passe d'origine, jamais modifié"}</span>
           ${bio
             ? `<button class="btn mini" onclick="desactiverEmpreinte('${r}')">
-                 👆 empreinte active — désactiver</button>`
+                 Empreinte active — désactiver</button>`
             : (r === U.role
                 ? `<button class="btn mini c" onclick="activerEmpreinte('${r}')">
-                     👆 Activer l'empreinte</button>`
+                     Activer l'empreinte</button>`
                 : `<span style="font-size:12px;color:var(--txt3)">
                      empreinte à activer depuis ce profil</span>`)}
         </div>
@@ -3133,10 +3057,10 @@ function vueSecurite(){
       Seul recours si le mot de passe ADMIN est perdu. Sans lui, il faudrait
       effacer toutes les données pour reprendre la main.</p>
     ${S.codeSecours
-      ? `<div class="alerte v" style="margin-bottom:14px">✓ Un code est actif,
+      ? `<div class="alerte v" style="margin-bottom:14px">Un code est actif,
            généré le ${frDate(S.codeSecoursLe)}. Vous devez l'avoir noté sur papier :
            il n'est plus affichable.</div>`
-      : `<div class="alerte r" style="margin-bottom:14px">⚠ Aucun code actif.
+      : `<div class="alerte r" style="margin-bottom:14px">Aucun code actif.
            Si le mot de passe ADMIN est oublié, la seule issue sera d'effacer
            toutes les données.</div>`}
     <button class="btn ${S.codeSecours?'':'p'}" onclick="genererCodeSecours()">
@@ -3207,10 +3131,7 @@ function vueServeur(){
       <div class="sous">Connexion à Supabase — préparation de la version partagée</div></div>
   </div>
 
-  <div class="alerte">Aujourd'hui, chaque appareil garde ses propres données :
-    ce que le patron saisit sur son téléphone n'apparaît pas sur celui du dépôt.
-    Un serveur lève cette limite et rend les règles de gestion <b>opposables</b>,
-    car elles sont alors appliquées par la base et non par l'écran.</div>
+  
 
   <div class="carte" style="margin-bottom:16px">
     <h3 class="etiq"><span class="etiq-n">1</span>Préparer le projet</h3>
@@ -3245,8 +3166,8 @@ function vueServeur(){
       ? `<div class="alerte">Aucun accès enregistré — l'application fonctionne
            entièrement sur cet appareil.</div>`
       : `<div class="alerte ${s.etat === 'ok' ? 'v' : (s.etat === 'ko' ? 'r' : '')}">
-           <b>${s.etat === 'ok' ? '✓ Serveur joignable'
-                : s.etat === 'ko' ? '⚠ Serveur injoignable' : 'Accès enregistré, jamais testé'}</b>
+           <b>${s.etat === 'ok' ? 'Serveur joignable'
+                : s.etat === 'ko' ? 'Serveur injoignable' : 'Accès enregistré, jamais testé'}</b>
            ${s.detail ? '<br>' + esc(s.detail) : ''}
            ${s.testeLe ? `<br><span class="puce-cat">dernier test : ${new Date(s.testeLe).toLocaleString('fr-FR')}</span>` : ''}
          </div>
