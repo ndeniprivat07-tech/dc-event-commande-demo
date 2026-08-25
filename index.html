@@ -28,6 +28,8 @@
   --rouge:#b91c1c; --rouge-pale:#fef2f2;
   --bleu:#1d4ed8; --bleu-pale:#eff6ff;
   --r:6px;
+  /* Filigrane : le flamant du logo, extrait par sa teinte rose puis aplati */
+  --flamant:none;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
@@ -39,6 +41,13 @@ body{
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 button{cursor:pointer;border:none;background:none;touch-action:manipulation}
 a{color:var(--bleu)}
+
+/* Filigrane de fond : discret, derriere le contenu, jamais cliquable */
+body::before{
+  content:''; position:fixed; right:-30px; bottom:-40px;
+  width:340px; height:478px; z-index:-1; pointer-events:none;
+  background:var(--flamant) right bottom/contain no-repeat; opacity:.05;
+}
 
 /* ---------- Connexion ---------- */
 #login{
@@ -329,6 +338,13 @@ img.vignette{cursor:zoom-in}
 #facture-barre{display:flex;gap:9px;justify-content:flex-end;margin-bottom:11px}
 #facture{background:#fff;color:#16191d;padding:34px 36px;border-radius:4px;
   font-size:12.5px;line-height:1.5;box-shadow:0 8px 30px #16191d33}
+/* Filigrane du document : centre, sous le texte, conserve a l'impression */
+#facture,#proforma-apercu{position:relative;z-index:0;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+#facture::before,#proforma-apercu::before{
+  content:''; position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:var(--flamant) center/52% no-repeat; opacity:.07;
+}
 #facture img,#proforma-apercu img{width:58px;height:58px;border-radius:4px;flex:0 0 auto;object-fit:cover}
 .fac-tete{display:flex;justify-content:space-between;gap:24px;
   padding-bottom:16px;border-bottom:2px solid #16191d;margin-bottom:18px}
