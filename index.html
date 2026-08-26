@@ -653,8 +653,9 @@ function semer(){
     ({id:ref,ref,nom,cat,qte,prix,valeur,unite:unite||'unité'});
   S = {
     societe:{
-      nom:'DC EVENT', activite:'Location de matériel événementiel et décoration',
-      tel:'07 00 00 00 01', mail:'demo@dc-event.example', ville:'Abidjan, Côte d\'Ivoire',
+      nom:'DC EVENT',
+      activite:'Location de vaisselle, buffet, chaise, table et décoration',
+      tel:'+225 07 00 00 00 01', mail:'demo@dc-event.example', ville:'Abidjan Angré',
       // À REMPLACER par les mentions légales réelles avant tout usage commercial
       rccm:'RCCM CI-ABJ-XXXX-X-XXXXX', cc:'Compte contribuable : XXXXXXXX',
       delaiReglement:30
@@ -2838,6 +2839,9 @@ function documentProforma(c, dejaRegle, facture){
   const estFacture = !!facture;
   const num = facture ? facture.num : (c.num || '—');
   const le  = facture ? facture.le  : (c.reservation || auj().toISOString().slice(0,10));
+  // Le sous-total est la somme de la colonne « Coût total XAF », donc sur une
+  // seule journée : la durée s'applique ensuite, par la ligne « X jours ».
+  const sousTotal = c.lignes.reduce((s,l)=>s + l.qte * l.prix, 0);
   const avance = dejaRegle || c.acompte || 0;
   // Le solde se calcule sur le même total que celui affiché : après arbitrage
   // des dégâts, la caution est soldée et les retenues sont dues.
@@ -2854,10 +2858,10 @@ function documentProforma(c, dejaRegle, facture){
         <img src="${document.querySelector('.marque img').getAttribute('src')}" alt="">
         <div>
           <div class="fac-nom">${esc(so.nom)}</div>
-          <div class="fac-p">${esc(so.activite)}</div>
-          <div class="fac-p">${esc(so.ville)} — Tél. ${esc(so.tel)}</div>
+          <div class="fac-p">${esc(so.activite)} ${esc(so.ville)}
+            &nbsp;tel : ${esc(so.tel)}</div>
           ${so.mail ? `<div class="fac-p">${esc(so.mail)}</div>` : ''}
-          ${so.rccm ? `<div class="fac-p">${esc(so.rccm)} — ${esc(so.cc)}</div>` : ''}
+          ${so.rccm && !/X{3}/.test(so.rccm) ? `<div class="fac-p">${esc(so.rccm)} — ${esc(so.cc)}</div>` : ''}
         </div>
       </div>
       <div class="fac-ref">
@@ -2889,8 +2893,8 @@ function documentProforma(c, dejaRegle, facture){
             <td>${esc(l.nom)}<span class="fl-ref">${esc(l.ref)}</span></td>
             <td class="num">${l.qte}</td>
             <td class="num">${fcfa(l.prix)}</td>
-            <td class="num">${fcfa(l.qte * l.prix * t.jours)}</td>
-            <td class="num">${a && a.valeur ? fcfa(a.valeur) : '—'}</td>
+            <td class="num">${fcfa(l.qte * l.prix)}</td>
+            <td class="num">${a && a.valeur ? fcfa(a.valeur) : ''}</td>
           </tr>`;
         }).join('')}
       </tbody>
@@ -2900,19 +2904,19 @@ function documentProforma(c, dejaRegle, facture){
       <div class="fac-mentions">${conditionsGenerales(t)}</div>
 
       <table class="fac-totaux">
-        ${lt('Sous-total', fcfa(c.lignes.reduce((s,l)=>s+l.qte*l.prix,0)))}
-        ${lt('Durée', '× ' + String(t.jours).padStart(2,'0') + ' jour(s)')}
-        ${lt('Total location', fcfa(t.brut), 'ft-sous')}
-        ${t.remise   ? lt(`Remise ${pct(t.tauxRemise)}`,   '− ' + fcfa(t.remise))   : lt('Remise', '—')}
-        ${t.escompte ? lt(`Escompte ${pct(t.tauxEscompte)}`, '− ' + fcfa(t.escompte)) : ''}
-        ${lt('Transport', t.transport ? fcfa(t.transport) : '—')}
-        ${lt('Caution', t.caution ? fcfa(t.caution) : '—')}
-        ${t.retenue ? lt('Retenue casse et manquants', fcfa(t.retenue)) : ''}
-        ${lt('TOTAL', fcfa(du), 'ft-sous')}
-        ${lt(estFacture ? 'DÉJÀ RÉGLÉ' : 'AVANCE', avance ? fcfa(avance) : '—')}
+        ${lt('Sous total', fcfa(sousTotal))}
+        ${lt('X jours', '× ' + String(t.jours).padStart(2,'0'))}
+        ${lt('Remise', t.remise ? '− ' + fcfa(t.remise) : '')}
+        ${t.escompte ? lt('Escompte', '− ' + fcfa(t.escompte)) : ''}
+        ${lt('Transport', t.transport ? fcfa(t.transport) : '')}
+        ${lt('Caution', t.caution ? fcfa(t.caution) : '')}
+        ${t.retenue ? lt('Casse et manquants', fcfa(t.retenue)) : ''}
+        ${lt('Total', fcfa(du), 'ft-sous')}
+        ${lt('AVANCE', avance ? fcfa(avance) : '')}
         ${rendu > 0
           ? lt('SOLDE À RESTITUER', fcfa(rendu), 'ft-net')
-          : lt(estFacture ? 'RESTE À PAYER' : 'SOLDE À LA LIVRAISON', fcfa(solde), 'ft-net')}
+          : lt(estFacture ? 'RESTE À PAYER' : 'Reste à payer à la livraison',
+               fcfa(solde), 'ft-net')}
       </table>
     </div>
 
