@@ -649,8 +649,9 @@ function tracer(action, detail, cible){
    ========================================================================= */
 function semer(){
   // valeur = prix de remplacement à neuf, base des retenues sur caution
-  const art = (ref,nom,cat,qte,prix,valeur,unite) =>
-    ({id:ref,ref,nom,cat,qte,prix,valeur,unite:unite||'unité'});
+  // entree = date d'entrée au parc, four = fournisseur d'origine
+  const art = (ref,nom,cat,qte,prix,valeur,entree,four,unite) =>
+    ({id:ref,ref,nom,cat,qte,prix,valeur,entree,four,unite:unite||'unité'});
   S = {
     societe:{
       nom:'DC EVENT',
@@ -661,28 +662,57 @@ function semer(){
       delaiReglement:30
     },
     articles:[
-      art('SON-01','Enceinte active 15" 800W','Sonorisation',12,25000,450000),
-      art('SON-02','Caisson de basse 18"','Sonorisation',6,35000,600000),
-      art('SON-03','Table de mixage 12 voies','Sonorisation',4,30000,500000),
-      art('SON-04','Micro HF main (paire)','Sonorisation',8,15000,250000),
-      art('ECL-01','Par LED 54x3W','Éclairage',24,8000,85000),
-      art('ECL-02','Lyre beam 230W','Éclairage',8,40000,700000),
-      art('ECL-03','Machine à fumée 1500W','Éclairage',4,20000,180000),
-      art('ECL-04','Projecteur architectural','Éclairage',16,10000,110000),
-      art('MOB-01','Chaise Napoléon dorée','Mobilier',400,1500,18000),
-      art('MOB-02','Table ronde 180 cm (10 pers.)','Mobilier',45,7000,75000),
-      art('MOB-03','Table serpentin','Mobilier',12,25000,260000),
-      art('MOB-04','Housse de chaise + nœud','Mobilier',400,800,6000),
-      art('MOB-05','Nappe ronde satin','Mobilier',60,2500,15000),
-      art('STR-01','Tente 5x10 m','Structure',6,150000,2500000),
-      art('STR-02','Barnum 3x3 m','Structure',14,35000,450000),
-      art('STR-03','Praticable 2x1 m','Structure',20,12000,140000),
-      art('VID-01','Écran LED P3 (m²)','Vidéo',18,60000,900000,'m²'),
-      art('VID-02','Vidéoprojecteur 5000 lumens','Vidéo',4,75000,1200000),
-      art('VID-03','Écran de projection 3 m','Vidéo',3,30000,220000),
-      art('DEC-01','Arche florale','Décoration',5,90000,400000),
-      art('DEC-02','Tapis rouge 10 m','Décoration',4,45000,300000),
-      art('DEC-03','Colonne lumineuse','Décoration',20,9000,95000)
+      art('SON-01','Enceinte active 15" 800W','Sonorisation',12,25000,450000,'2024-03-12','F-SONOPRO'),
+      art('SON-02','Caisson de basse 18"','Sonorisation',6,35000,600000,'2024-03-12','F-SONOPRO'),
+      art('SON-03','Table de mixage 12 voies','Sonorisation',4,30000,500000,'2024-06-05','F-SONOPRO'),
+      art('SON-04','Micro HF main (paire)','Sonorisation',8,15000,250000,'2025-01-20','F-SONOPRO'),
+      art('ECL-01','Par LED 54x3W','Éclairage',24,8000,85000,'2024-08-14','F-LUMICI'),
+      art('ECL-02','Lyre beam 230W','Éclairage',8,40000,700000,'2025-02-03','F-LUMICI'),
+      art('ECL-03','Machine à fumée 1500W','Éclairage',4,20000,180000,'2024-08-14','F-LUMICI'),
+      art('ECL-04','Projecteur architectural','Éclairage',16,10000,110000,'2025-05-22','F-LUMICI'),
+      art('MOB-01','Chaise Napoléon dorée','Mobilier',400,1500,18000,'2023-11-09','F-MOBDECO'),
+      art('MOB-02','Table ronde 180 cm (10 pers.)','Mobilier',45,7000,75000,'2023-11-09','F-MOBDECO'),
+      art('MOB-03','Table serpentin','Mobilier',12,25000,260000,'2026-02-17','F-MOBDECO'),
+      art('MOB-04','Housse de chaise + nœud','Mobilier',400,800,6000,'2024-01-30','F-MOBDECO'),
+      art('MOB-05','Nappe ronde satin','Mobilier',60,2500,15000,'2024-01-30','F-MOBDECO'),
+      art('STR-01','Tente 5x10 m','Structure',6,150000,2500000,'2023-07-25','F-STRUCT'),
+      art('STR-02','Barnum 3x3 m','Structure',14,35000,450000,'2023-07-25','F-STRUCT'),
+      art('STR-03','Praticable 2x1 m','Structure',20,12000,140000,'2025-09-11','F-STRUCT'),
+      art('VID-01','Écran LED P3 (m²)','Vidéo',18,60000,900000,'2025-11-04','F-SONOPRO','m²'),
+      art('VID-02','Vidéoprojecteur 5000 lumens','Vidéo',4,75000,1200000,'2024-10-16','F-SONOPRO'),
+      art('VID-03','Écran de projection 3 m','Vidéo',3,30000,220000,'2024-10-16','F-SONOPRO'),
+      art('DEC-01','Arche florale','Décoration',5,90000,400000,'2025-04-08','F-MOBDECO'),
+      art('DEC-02','Tapis rouge 10 m','Décoration',4,45000,300000,'2025-04-08','F-MOBDECO'),
+      art('DEC-03','Colonne lumineuse','Décoration',20,9000,95000,'2025-12-01','F-LUMICI')
+    ],
+    // Répertoire clients : le nom n'est plus saisi à la volée sur chaque
+    // commande, il est repris d'une fiche, ce qui évite les doublons
+    // d'orthographe et donne un historique par client.
+    clients:[
+      {id:'CL-001', nom:'La Poz Grillade',      tel:'07 17 99 44 16', lieu:'Angré',
+       type:'Restaurant', note:'', creeLe:jour(-120)},
+      {id:'CL-002', nom:'Mariage Koffi & Aya',  tel:'07 08 11 22 33', lieu:'Espace Latrille, Cocody',
+       type:'Particulier', note:'', creeLe:jour(-40)},
+      {id:'CL-003', nom:'Séminaire Groupe Alpha', tel:'01 44 55 66 77', lieu:'Hôtel Ivoire, Plateau',
+       type:'Entreprise', note:'Facturation au siège', creeLe:jour(-95)},
+      {id:'CL-004', nom:'Anniversaire Mme Diarra', tel:'05 99 88 77 66', lieu:'Riviera Palmeraie',
+       type:'Particulier', note:'', creeLe:jour(-60)},
+      {id:'CL-005', nom:'Lancement produit Novatel CI', tel:'27 20 30 40 50', lieu:'Sofitel, Plateau',
+       type:'Entreprise', note:'', creeLe:jour(-20)},
+      {id:'CL-006', nom:'Baptême Famille Yao',  tel:'07 12 34 56 78', lieu:'Yopougon Niangon',
+       type:'Particulier', note:'', creeLe:jour(-150)}
+    ],
+    // Fournisseurs : d'où vient le matériel, pour le renouveler ou le
+    // remplacer après une casse.
+    fournisseurs:[
+      {id:'F-SONOPRO', nom:'SonoPro Abidjan',   tel:'01 22 33 44 55', ville:'Zone 4',
+       fournit:'Sonorisation, vidéo', note:'', creeLe:jour(-400)},
+      {id:'F-LUMICI',  nom:'Lumière CI',        tel:'05 44 55 66 77', ville:'Marcory',
+       fournit:'Éclairage scénique', note:'', creeLe:jour(-380)},
+      {id:'F-MOBDECO', nom:'Mobilier & Déco Plus', tel:'07 66 77 88 99', ville:'Koumassi',
+       fournit:'Mobilier, décoration, vaisselle', note:'', creeLe:jour(-500)},
+      {id:'F-STRUCT',  nom:'Structures Événement', tel:'27 21 40 50 60', ville:'Yopougon',
+       fournit:'Tentes, barnums, praticables', note:'', creeLe:jour(-450)}
     ],
     commandes:[], validations:[], paiements:[], journal:[],
     compteur:{ cmd:0, fac:0 },
@@ -909,7 +939,9 @@ const UTILISATEURS = {
 const MENU = [
   { cle:'tableau',     ic:'', txt:'Tableau de bord', roles:['ADMIN','MANAGER','PREPARATEUR'] },
   { cle:'commandes',   ic:'', txt:'Commandes',       roles:['ADMIN','MANAGER'] },
-  { cle:'catalogue',   ic:'', txt:'Catalogue',       roles:['ADMIN','MANAGER','PREPARATEUR'] },
+  { cle:'catalogue',   ic:'', txt:'Stock',           roles:['ADMIN','MANAGER','PREPARATEUR'] },
+  { cle:'clients',     ic:'', txt:'Clients',         roles:['ADMIN','MANAGER'] },
+  { cle:'fournisseurs',ic:'', txt:'Fournisseurs',    roles:['ADMIN'] },
   { cle:'preparation', ic:'', txt:'Préparation',     roles:['ADMIN','PREPARATEUR'] },
   { cle:'validations', ic:'', txt:'Validations',     roles:['ADMIN','MANAGER'] },
   { cle:'facturation', ic:'', txt:'Facturation',     roles:['ADMIN','MANAGER'] },
@@ -1390,6 +1422,7 @@ function rendre(){
   const f = { tableau:vueTableau, commandes:vueCommandes, catalogue:vueCatalogue,
               preparation:vuePreparation, validations:vueValidations,
               facturation:vueFacturation, journal:vueJournal,
+              clients:vueClients, fournisseurs:vueFournisseurs,
               securite:vueSecurite, serveur:vueServeur, demo:vueDemo }[vueCourante];
   $('#vue').innerHTML = f ? f() : '';
   window.scrollTo(0,0);
@@ -1525,8 +1558,9 @@ function vueCatalogue(){
     <table><thead><tr>
       <th>Réf.</th><th>Désignation</th><th class="num">Parc</th>
       <th class="num">Réservé</th><th class="num">Disponible</th>
-      <th class="num">Prix / jour</th><th style="width:130px">Charge</th>
-      ${gere?'<th style="width:96px"></th>':''}</tr></thead><tbody>
+      <th class="num">Prix / jour</th><th>Entré le</th><th>Fournisseur</th>
+      <th style="width:110px">Charge</th>
+      ${gere?'<th style="width:150px"></th>':''}</tr></thead><tbody>
       ${liste.map(a=>{
         const r = reserve(a.id, catD1, catD2);
         const d = a.qte - r;
@@ -1545,6 +1579,9 @@ function vueCatalogue(){
           <td class="num" style="color:var(--txt2)">${r}</td>
           <td class="num ${cl}">${d}</td>
           <td class="num">${fcfa(a.prix)}</td>
+          <td style="color:var(--txt2)">${a.entree ? frDate(a.entree) : ''}</td>
+          <td style="color:var(--txt2)">${(() => {
+            const f = S.fournisseurs.find(x=>x.id===a.four); return f ? esc(f.nom) : ''; })()}</td>
           <td><div class="jauge"><i style="width:${pc}%;background:${coul}"></i></div></td>
           ${gere?`<td style="text-align:right;white-space:nowrap">
             <button class="btn mini"  onclick="formArticle('${a.id}')">Modifier</button>
@@ -1657,6 +1694,15 @@ function formArticle(id){
       <input id="a-valeur" type="number" min="0" step="1000" value="${a?(a.valeur||0):0}">
       <div class="puce-cat" style="margin-top:5px">Base de calcul des retenues sur caution
         en cas de casse ou de matériel non restitué</div></div>
+    <div class="paire">
+      <div class="champ"><label>Date d'entrée au parc</label>
+        <input id="a-entree" type="date" value="${a?(a.entree||''):auj().toISOString().slice(0,10)}"></div>
+      <div class="champ"><label>Fournisseur</label>
+        <select id="a-four">
+          <option value="">— non renseigné —</option>
+          ${S.fournisseurs.map(f=>`<option value="${f.id}" ${a&&a.four===f.id?'selected':''}>${esc(f.nom)}</option>`).join('')}
+        </select></div>
+    </div>
     <div class="champ" style="margin-bottom:0"><label>Photo</label>
       <input type="file" accept="image/*" onchange="choisirPhoto(this)"
         style="padding:9px 12px;font-size:13px">
@@ -1685,6 +1731,8 @@ function enregistrerArticle(id){
   const qte  = parseInt($('#a-qte').value);
   const prix = parseFloat($('#a-prix').value);
   const valeur = parseFloat($('#a-valeur').value) || 0;
+  const entree = $('#a-entree').value;
+  const four   = $('#a-four').value;
 
   if(!ref || !nom || !cat){ toast("Référence, désignation et catégorie sont obligatoires.", 'err'); return; }
   if(isNaN(qte) || qte < 0){ toast("Quantité invalide.", 'err'); return; }
@@ -1699,7 +1747,7 @@ function enregistrerArticle(id){
     }
     const avant = `${a.qte} au parc à ${fcfa(a.prix)}/j`;
     const photoAvant = a.photo || null;
-    Object.assign(a, {nom, cat, qte, prix, valeur});
+    Object.assign(a, {nom, cat, qte, prix, valeur, entree, four});
     if(photoTemp) a.photo = photoTemp; else delete a.photo;
     if(!sauverOuEchouer()){
       if(photoAvant) a.photo = photoAvant; else delete a.photo;
@@ -1711,7 +1759,7 @@ function enregistrerArticle(id){
     toast(`${a.ref} mis à jour.`, 'ok');
   } else {
     if(S.articles.some(x=>x.ref===ref)){ toast(`La référence ${ref} existe déjà.`, 'err'); return; }
-    const neuf = {id:ref, ref, nom, cat, qte, prix, valeur, unite:'unité'};
+    const neuf = {id:ref, ref, nom, cat, qte, prix, valeur, entree, four, unite:'unité'};
     if(photoTemp) neuf.photo = photoTemp;
     S.articles.push(neuf);
     if(!sauverOuEchouer()){
@@ -1808,6 +1856,204 @@ function lancerImport(){
 }
 
 /* =========================================================================
+   VUE — CLIENTS
+   Le nom n'est plus tapé à la volée sur chaque commande : il vient d'une
+   fiche, ce qui supprime les doublons d'orthographe et donne un historique.
+   ========================================================================= */
+let rechClient = '';
+
+function vueClients(){
+  const q = rechClient.trim().toLowerCase();
+  const liste = S.clients.filter(c => !q ||
+    (c.nom + ' ' + c.tel + ' ' + c.lieu + ' ' + (c.type||'')).toLowerCase().includes(q));
+
+  const activite = id => {
+    const cs = S.commandes.filter(x => x.clientId === id && x.statut !== 'ANNULEE');
+    const ca = cs.reduce((s,x) => s + totalCommande(x).net, 0);
+    return { n: cs.length, ca, derniere: cs.map(x=>x.debut).sort().pop() };
+  };
+
+  return `
+  <div class="entete">
+    <div><h2>Clients</h2>
+      <div class="sous">${S.clients.length} fiche(s)</div></div>
+    <div class="droite"><button class="btn p" onclick="formClient()">Nouveau client</button></div>
+  </div>
+
+  <div class="carte" style="margin-bottom:14px">
+    <div class="champ" style="margin:0"><label>Rechercher</label>
+      <input id="rech-cl" value="${esc(rechClient)}" placeholder="Nom, téléphone, quartier…"
+        oninput="majRechClient(this.value)"></div>
+  </div>
+
+  <div class="carte"><div class="tbl-scroll">
+    <table><thead><tr>
+      <th>Client</th><th>Type</th><th>Téléphone</th><th>Lieu habituel</th>
+      <th class="num">Commandes</th><th class="num">Chiffre d'affaires</th>
+      <th>Dernière</th><th></th></tr></thead><tbody>
+      ${liste.map(c=>{
+        const a = activite(c.id);
+        return `<tr>
+          <td><b>${esc(c.nom)}</b>${c.note?`<div class="puce-cat">${esc(c.note)}</div>`:''}</td>
+          <td style="color:var(--txt2)">${esc(c.type||'')}</td>
+          <td style="color:var(--txt2)">${esc(c.tel||'')}</td>
+          <td style="color:var(--txt2)">${esc(c.lieu||'')}</td>
+          <td class="num">${a.n || ''}</td>
+          <td class="num">${a.ca ? fcfa(a.ca) : ''}</td>
+          <td style="color:var(--txt2)">${a.derniere ? frDate(a.derniere) : ''}</td>
+          <td style="text-align:right;white-space:nowrap">
+            <button class="btn mini" onclick="formClient('${c.id}')">Modifier</button>
+            <button class="btn mini r" onclick="supprimerClient('${c.id}')">Retirer</button></td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="8" class="vide">Aucun client ne correspond</td></tr>'}
+    </tbody></table></div>
+  </div>`;
+}
+
+function majRechClient(v){
+  rechClient = v; rendre();
+  const e = $('#rech-cl'); if(e){ e.focus(); e.setSelectionRange(e.value.length, e.value.length); }
+}
+
+function formClient(id){
+  const c = id ? S.clients.find(x=>x.id===id) : null;
+  modale(c ? `Client — ${esc(c.nom)}` : 'Nouveau client', `
+    <div class="champ"><label>Nom <i class="req">*</i></label>
+      <input id="cl-nom" value="${esc(c?c.nom:'')}" placeholder="Nom du client ou de l'événement"></div>
+    <div class="paire">
+      <div class="champ"><label>Téléphone</label>
+        <input id="cl-tel" value="${esc(c?c.tel:'')}" placeholder="07 00 00 00 00"></div>
+      <div class="champ"><label>Type</label>
+        <input id="cl-type" value="${esc(c?(c.type||''):'')}" list="l-types" placeholder="Particulier">
+        <datalist id="l-types">
+          <option value="Particulier"><option value="Entreprise">
+          <option value="Restaurant"><option value="Hôtel"><option value="Association">
+        </datalist></div>
+    </div>
+    <div class="champ"><label>Lieu habituel</label>
+      <input id="cl-lieu" value="${esc(c?c.lieu:'')}" placeholder="Quartier, salle…"></div>
+    <div class="champ" style="margin-bottom:0"><label>Note</label>
+      <input id="cl-note" value="${esc(c?(c.note||''):'')}" placeholder="Facultatif"></div>
+  `, `<button class="btn" onclick="fermerModale()">Annuler</button>
+      <button class="btn p" onclick="enregistrerClient(${c?`'${c.id}'`:'null'})">Enregistrer</button>`);
+  setTimeout(()=>$('#cl-nom').focus(), 60);
+}
+
+function enregistrerClient(id){
+  const nom = $('#cl-nom').value.trim();
+  if(!nom){ toast("Le nom est obligatoire.", 'err'); return; }
+  const doublon = S.clients.find(x => x.id !== id && x.nom.toLowerCase() === nom.toLowerCase());
+  if(doublon){ toast(`« ${doublon.nom} » existe déjà dans le répertoire.`, 'err'); return; }
+
+  const champs = { nom, tel:$('#cl-tel').value.trim(), type:$('#cl-type').value.trim(),
+                   lieu:$('#cl-lieu').value.trim(), note:$('#cl-note').value.trim() };
+  if(id){
+    Object.assign(S.clients.find(x=>x.id===id), champs);
+    tracer('Modification client', nom, id);
+  } else {
+    const neuf = Object.assign({ id: uid('CL'), creeLe: auj().toISOString().slice(0,10) }, champs);
+    S.clients.push(neuf);
+    tracer('Création client', nom, neuf.id);
+  }
+  sauver(); fermerModale(); rendre();
+  toast(`${nom} enregistré.`, 'ok');
+}
+
+function supprimerClient(id){
+  const c = S.clients.find(x=>x.id===id);
+  const cs = S.commandes.filter(x=>x.clientId===id);
+  if(cs.length){
+    toast(`${c.nom} a ${cs.length} commande(s) : la fiche ne peut pas être retirée.`, 'err'); return; }
+  if(!confirm(`Retirer « ${c.nom} » du répertoire ?`)) return;
+  S.clients = S.clients.filter(x=>x.id!==id);
+  tracer('Suppression client', c.nom, id);
+  sauver(); rendre(); toast(`${c.nom} retiré.`, 'ok');
+}
+
+/* =========================================================================
+   VUE — FOURNISSEURS  (ADMIN)
+   ========================================================================= */
+function vueFournisseurs(){
+  return `
+  <div class="entete">
+    <div><h2>Fournisseurs</h2>
+      <div class="sous">${S.fournisseurs.length} fiche(s) — d'où vient le matériel du parc</div></div>
+    <div class="droite"><button class="btn p" onclick="formFournisseur()">Nouveau fournisseur</button></div>
+  </div>
+
+  <div class="carte"><div class="tbl-scroll">
+    <table><thead><tr>
+      <th>Fournisseur</th><th>Fournit</th><th>Téléphone</th><th>Ville</th>
+      <th class="num">Références</th><th class="num">Valeur du parc</th><th></th></tr></thead><tbody>
+      ${S.fournisseurs.map(f=>{
+        const arts = S.articles.filter(a=>a.four===f.id);
+        const val = arts.reduce((s,a)=>s + (a.valeur||0) * a.qte, 0);
+        return `<tr>
+          <td><b>${esc(f.nom)}</b>${f.note?`<div class="puce-cat">${esc(f.note)}</div>`:''}</td>
+          <td style="color:var(--txt2)">${esc(f.fournit||'')}</td>
+          <td style="color:var(--txt2)">${esc(f.tel||'')}</td>
+          <td style="color:var(--txt2)">${esc(f.ville||'')}</td>
+          <td class="num">${arts.length || ''}</td>
+          <td class="num">${val ? fcfa(val) : ''}</td>
+          <td style="text-align:right;white-space:nowrap">
+            <button class="btn mini" onclick="formFournisseur('${f.id}')">Modifier</button>
+            <button class="btn mini r" onclick="supprimerFournisseur('${f.id}')">Retirer</button></td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="7" class="vide">Aucun fournisseur</td></tr>'}
+    </tbody></table></div>
+  </div>`;
+}
+
+function formFournisseur(id){
+  const f = id ? S.fournisseurs.find(x=>x.id===id) : null;
+  modale(f ? `Fournisseur — ${esc(f.nom)}` : 'Nouveau fournisseur', `
+    <div class="champ"><label>Nom <i class="req">*</i></label>
+      <input id="fo-nom" value="${esc(f?f.nom:'')}" placeholder="Raison sociale"></div>
+    <div class="champ"><label>Fournit</label>
+      <input id="fo-fournit" value="${esc(f?(f.fournit||''):'')}"
+        placeholder="Sonorisation, mobilier…"></div>
+    <div class="paire">
+      <div class="champ"><label>Téléphone</label>
+        <input id="fo-tel" value="${esc(f?f.tel:'')}" placeholder="01 00 00 00 00"></div>
+      <div class="champ"><label>Ville ou quartier</label>
+        <input id="fo-ville" value="${esc(f?(f.ville||''):'')}" placeholder="Marcory"></div>
+    </div>
+    <div class="champ" style="margin-bottom:0"><label>Note</label>
+      <input id="fo-note" value="${esc(f?(f.note||''):'')}" placeholder="Délais, conditions…"></div>
+  `, `<button class="btn" onclick="fermerModale()">Annuler</button>
+      <button class="btn p" onclick="enregistrerFournisseur(${f?`'${f.id}'`:'null'})">Enregistrer</button>`);
+  setTimeout(()=>$('#fo-nom').focus(), 60);
+}
+
+function enregistrerFournisseur(id){
+  const nom = $('#fo-nom').value.trim();
+  if(!nom){ toast("Le nom est obligatoire.", 'err'); return; }
+  const champs = { nom, fournit:$('#fo-fournit').value.trim(), tel:$('#fo-tel').value.trim(),
+                   ville:$('#fo-ville').value.trim(), note:$('#fo-note').value.trim() };
+  if(id){
+    Object.assign(S.fournisseurs.find(x=>x.id===id), champs);
+    tracer('Modification fournisseur', nom, id);
+  } else {
+    const neuf = Object.assign({ id: uid('F'), creeLe: auj().toISOString().slice(0,10) }, champs);
+    S.fournisseurs.push(neuf);
+    tracer('Création fournisseur', nom, neuf.id);
+  }
+  sauver(); fermerModale(); rendre();
+  toast(`${nom} enregistré.`, 'ok');
+}
+
+function supprimerFournisseur(id){
+  const f = S.fournisseurs.find(x=>x.id===id);
+  const arts = S.articles.filter(a=>a.four===id);
+  if(arts.length){
+    toast(`${f.nom} fournit ${arts.length} référence(s) : la fiche ne peut pas être retirée.`, 'err'); return; }
+  if(!confirm(`Retirer « ${f.nom} » ?`)) return;
+  S.fournisseurs = S.fournisseurs.filter(x=>x.id!==id);
+  tracer('Suppression fournisseur', f.nom, id);
+  sauver(); rendre(); toast(`${f.nom} retiré.`, 'ok');
+}
+
+/* =========================================================================
    VUE — COMMANDES
    ========================================================================= */
 let filtreStatut = '';
@@ -1850,7 +2096,7 @@ function vueCommandes(){
 
 /* ---------- Saisie d'une commande ---------- */
 function nouvelleCommande(){
-  brouillon = { etape:1, client:'', tel:'', lieu:'',
+  brouillon = { etape:1, clientId:null, client:'', tel:'', lieu:'',
                 reservation: auj().toISOString().slice(0,10),
                 debut:jour(3), heure:'', fin:jour(4), lignes:[],
                 remise:0, escompte:0, transport:0, transportNote:'', caution:0,
@@ -1879,6 +2125,17 @@ function etape(n){
   }
   b.etape = n; rendre();
 }
+/* Reprise d'une fiche client : les coordonnées sont préremplies mais
+   restent modifiables — le lieu change souvent d'un événement à l'autre. */
+function choisirClient(id){
+  const b = brouillon;
+  if(!id){ b.clientId = null; b.client = ''; b.tel = ''; b.lieu = ''; rendre(); return; }
+  const c = S.clients.find(x=>x.id===id);
+  if(!c) return;
+  b.clientId = c.id; b.client = c.nom; b.tel = c.tel || ''; b.lieu = c.lieu || '';
+  rendre();
+}
+
 function majBrouillon(champ, val){
   brouillon[champ] = val;
   if(champ==='debut' && brouillon.fin < val) brouillon.fin = val;
@@ -1937,6 +2194,22 @@ function enregistrerBrouillon(statut){
   if(aValider){
     motif = prompt(`Réduction demandée : ${brouillon.remise} % de remise + ${brouillon.escompte} % d'escompte, soit ${demande} %.\n\nAu-delà de ${SEUIL_REMISE} %, l'ADMIN doit valider.\nLa commande sera enregistrée au tarif plein en attendant.\n\nMotif obligatoire :`, '');
     if(!motif){ toast("Enregistrement abandonné : le motif est obligatoire.", 'err'); return; }
+  }
+
+  // Client inconnu du répertoire : sa fiche est créée, pour qu'une deuxième
+  // commande le retrouve au lieu de ressaisir un nom légèrement différent.
+  if(!brouillon.clientId){
+    const nom = brouillon.client.trim();
+    const existe = S.clients.find(x => x.nom.toLowerCase() === nom.toLowerCase());
+    if(existe){
+      brouillon.clientId = existe.id;
+    } else {
+      const neuf = { id: uid('CL'), nom, tel:brouillon.tel, lieu:brouillon.lieu,
+                     type:'', note:'', creeLe: auj().toISOString().slice(0,10) };
+      S.clients.push(neuf);
+      brouillon.clientId = neuf.id;
+      tracer('Création client', `${nom} — depuis une commande`, neuf.id);
+    }
   }
 
   S.compteur.cmd++;
@@ -2075,6 +2348,13 @@ function vueEtapeClient(){
 
   <div class="carte" style="max-width:760px">
     <h3 class="etiq"><span class="etiq-n">1</span>Le client</h3>
+    <div class="champ"><label>Choisir dans le répertoire</label>
+      <select onchange="choisirClient(this.value)">
+        <option value="">— Nouveau client —</option>
+        ${S.clients.slice().sort((x,y)=>x.nom.localeCompare(y.nom)).map(c=>
+          `<option value="${c.id}" ${b.clientId===c.id?'selected':''}>${esc(c.nom)}${c.tel?' — '+esc(c.tel):''}</option>`
+        ).join('')}
+      </select></div>
     <div class="paire">
       <div class="champ"><label>Client <i class="req">*</i></label>
         <input value="${esc(b.client)}" placeholder="Nom du client ou de l'événement"
@@ -2085,7 +2365,9 @@ function vueEtapeClient(){
     </div>
     <div class="champ"><label>Lieu de livraison</label>
       <input value="${esc(b.lieu)}" placeholder="Quartier, salle…"
-        onchange="majBrouillon('lieu',this.value)"></div>
+        onchange="majBrouillon('lieu',this.value)">
+      ${!b.clientId && b.client.trim()
+        ? `<div class="puce-cat" style="margin-top:5px">Ce client sera ajouté au répertoire à l'enregistrement</div>` : ''}</div>
 
     <div class="ligne-sep"></div>
     <h3 class="etiq"><span class="etiq-n">2</span>Les dates</h3>
